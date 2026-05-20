@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	rtdebug "runtime/debug"
 	"sync"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -233,6 +235,22 @@ func (a *App) startup(ctx context.Context) {
 			}
 		}()
 	}
+
+	// Spawn a background reclaimer to return unused memory to OS periodically
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-a.agentCtx.Done():
+				return
+			case <-ticker.C:
+				rtdebug.FreeOSMemory()
+			}
+		}
+	}()
 }
 
 func (a *App) notice(action string, data interface{}) {
@@ -254,6 +272,8 @@ func (a *App) notice(action string, data interface{}) {
 			log.Printf("unexpected ssh.PublicKey\n")
 		}
 	}
+	// Async reclaim memory after key operations
+	go rtdebug.FreeOSMemory()
 }
 
 func (a *App) onSign(pubkey *agent.Key) error {
@@ -282,7 +302,11 @@ func (a *App) OpenFile() (string, error) {
 
 // domReady is called after the front-end dom has been loaded
 func (a *App) domReady(ctx context.Context) {
-	// Add your action here
+	// Free memory loaded during frontend startup
+	go func() {
+		time.Sleep(2 * time.Second) // wait for WebView to settle
+		rtdebug.FreeOSMemory()
+	}()
 }
 
 // Greet returns a greeting for the given name

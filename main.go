@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	"github.com/masahide/OmniSSHAgent/pkg/filelog"
 	"github.com/masahide/OmniSSHAgent/pkg/pageant"
@@ -47,6 +48,9 @@ func checkAlreadyRunning() {
 var Logger *filelog.FileLog
 
 func main() {
+	// Tune Garbage Collector to run more aggressively to keep memory footprint minimal.
+	debug.SetGCPercent(20)
+
 	isService := flag.Bool("service", false, "run as a headless background service")
 	port := flag.Int("port", 53210, "port for the HTTP API service")
 	flag.Parse()
@@ -102,7 +106,7 @@ func main() {
 		HideWindowOnClose: true,
 		// RGBA:              &options.RGBA{R: 33, G: 37, B: 43, A: 255},
 		Assets:     assets,
-		LogLevel:   logger.DEBUG,
+		LogLevel:   logger.INFO,
 		OnStartup:  app.startup,
 		OnDomReady: app.domReady,
 		OnShutdown: app.shutdown,

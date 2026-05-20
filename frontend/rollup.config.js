@@ -37,7 +37,7 @@ function serve() {
 export default {
   input: "src/main.js",
   output: {
-    sourcemap: true,
+    sourcemap: !production,
     format: "iife",
     name: "app",
     file: "dist/bundle.js",
@@ -52,7 +52,7 @@ export default {
     postcss({
       minimize: true,
       extract: "bundle.css",
-      sourceMap: true,
+      sourceMap: !production,
       plugins: [autoprefixer()],
     }),
     // If you have external dependencies installed from
@@ -70,7 +70,9 @@ export default {
         { src: "src/index.html", dest: "dist/" },
         { src: "src/global.css", dest: "dist/" },
         { src: "src/assets", dest: "dist/" },
-        { src: "node_modules/material-icons/iconfont", dest: "dist/" },
+        { src: "node_modules/material-icons/iconfont/material-icons.css", dest: "dist/iconfont" },
+        { src: "node_modules/material-icons/iconfont/material-icons.woff", dest: "dist/iconfont" },
+        { src: "node_modules/material-icons/iconfont/material-icons.woff2", dest: "dist/iconfont" },
         //{ src: 'src/cssreset.css', dest: 'dist/' },
       ],
     }),
