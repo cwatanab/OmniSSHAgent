@@ -19,6 +19,7 @@
       settingsUnderstand: "Understood",
       settingsStartHidden: "Hide the window on launch",
       settingsDebugLog: "Write debug log on startup (useful when tray is unresponsive)",
+      settingsOpenLogDir: "Open log directory",
       settingsBalloon: "Show a balloon notification when an SSH key is used",
       settingsPageant: "Enable Pageant",
       settingsNamedPipe: "Enable Named pipe agent",
@@ -58,6 +59,7 @@
       settingsUnderstand: "了解",
       settingsStartHidden: "起動時にウィンドウを非表示にする",
       settingsDebugLog: "起動時にデバッグログを書き込む (トレイが反応しない場合に有用)",
+      settingsOpenLogDir: "ログディレクトリを開く",
       settingsBalloon: "SSH鍵が使用されたときにバルーン通知を表示する",
       settingsPageant: "Pageant を有効にする",
       settingsNamedPipe: "Named pipe エージェントを有効にする",
@@ -203,6 +205,15 @@
     dispatch("cancel");
   };
 
+  const openLogDir = async () => {
+    try {
+      await window.go.main.App.OpenLogDir();
+    } catch (err) {
+      console.error(err);
+      toast.push(err, red);
+    }
+  };
+
   const namePipeToggle = () => {
     if (data.ProxyModeOfNamedPipe) {
       data.ProxyModeOfNamedPipe = false;
@@ -296,6 +307,13 @@
               <span class="material-icons setting-icon checkbox-icon">bug_report</span>
               <span>{t[lang].settingsDebugLog}</span>
             </FormField>
+          </div>
+
+          <div class="settings-item settings-log-item" style="padding-left: 52px; margin-top: 4px; margin-bottom: 8px;">
+            <Button variant="outlined" on:click={openLogDir}>
+              <span class="material-icons" style="margin-right: 6px;">folder_open</span>
+              <Label>{t[lang].settingsOpenLogDir}</Label>
+            </Button>
           </div>
         </div>
       </Card>

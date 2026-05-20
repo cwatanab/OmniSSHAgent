@@ -28,16 +28,14 @@ import (
 
 // App application struct
 type App struct {
-	ctx              context.Context
-	agentCtx         context.Context
-	ti               *wintray.TrayIcon
-	keyRing          *sshutil.KeyRing
-	settings         *store.Settings
-	wg               sync.WaitGroup
-	cancelAgents     context.CancelFunc
-	shutdownOnce     sync.Once
-	debugLogMenuItem *wintray.MenuItem
-	logDirMenuItem   *wintray.MenuItem
+	ctx          context.Context
+	agentCtx     context.Context
+	ti           *wintray.TrayIcon
+	keyRing      *sshutil.KeyRing
+	settings     *store.Settings
+	wg           sync.WaitGroup
+	cancelAgents context.CancelFunc
+	shutdownOnce sync.Once
 }
 
 // NewApp creates a new App application struct
@@ -125,24 +123,14 @@ func (a *App) systrayOnReady() {
 	a.setTrayTooltip()
 	mShowWindow := a.ti.AddMenuItem(ts.ShowWindow, ts.ShowWindowTip)
 	mQuit := a.ti.AddMenuItem(ts.Quit, ts.QuitTip)
-	mLogCheckBox := a.ti.AddMenuItemCheckbox(ts.DebugLog, ts.DebugLogTip, false)
-	mLogDirOpen := a.ti.AddMenuItem(ts.OpenLogDir, ts.OpenLogDirTip)
-	a.debugLogMenuItem = mLogCheckBox
-	a.logDirMenuItem = mLogDirOpen
-	a.applyDebugLogMenuState()
 	go func() {
 		for {
 			select {
 			case <-mShowWindow.ClickedCh:
 				a.showWindow()
-			case <-mLogCheckBox.ClickedCh:
-				a.setDebugLogEnabled(!mLogCheckBox.Checked())
 			case <-mQuit.ClickedCh:
 				a.Quit()
 				return
-			case <-mLogDirOpen.ClickedCh:
-				dir := filepath.Dir(Logger.FilePath)
-				winopen.Open(dir)
 			}
 		}
 	}()
@@ -343,23 +331,13 @@ func (a *App) setDebugLogEnabled(enabled bool) {
 	if a.settings != nil {
 		a.settings.SaveData.DebugLog = enabled
 	}
-	a.applyDebugLogMenuState()
 }
 
-func (a *App) applyDebugLogMenuState() {
-	if a.debugLogMenuItem == nil {
-		return
-	}
-	if Logger.GetEnable() {
-		a.debugLogMenuItem.Check()
-		if a.logDirMenuItem != nil {
-			a.logDirMenuItem.Enable()
-		}
-		return
-	}
-	a.debugLogMenuItem.Uncheck()
-	if a.logDirMenuItem != nil {
-		a.logDirMenuItem.Disable()
+// OpenLogDir opens the directory containing the log file in Windows Explorer
+func (a *App) OpenLogDir() {
+	if Logger != nil && Logger.FilePath != "" {
+		dir := filepath.Dir(Logger.FilePath)
+		winopen.Open(dir)
 	}
 }
 
