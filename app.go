@@ -50,10 +50,6 @@ type trayStrings struct {
 	ShowWindowTip string
 	Quit          string
 	QuitTip       string
-	DebugLog      string
-	DebugLogTip   string
-	OpenLogDir    string
-	OpenLogDirTip string
 	KeyUsed       string // fmt string: key name
 }
 
@@ -63,10 +59,6 @@ var trayEN = trayStrings{
 	ShowWindowTip: "Show main window",
 	Quit:          "Quit",
 	QuitTip:       "Quit the whole app",
-	DebugLog:      "Debug log",
-	DebugLogTip:   "Enable debug log file output",
-	OpenLogDir:    "Open log directory",
-	OpenLogDirTip: "Open log directory",
 	KeyUsed:       "SSH Key '%s' was used",
 }
 
@@ -76,10 +68,6 @@ var trayJA = trayStrings{
 	ShowWindowTip: "メインウィンドウを表示します",
 	Quit:          "終了",
 	QuitTip:       "アプリケーションを終了します",
-	DebugLog:      "デバッグログ",
-	DebugLogTip:   "デバッグログファイルの出力を有効にします",
-	OpenLogDir:    "ログディレクトリを開く",
-	OpenLogDirTip: "ログディレクトリを開きます",
 	KeyUsed:       "SSH鍵 '%s' が使用されました",
 }
 
