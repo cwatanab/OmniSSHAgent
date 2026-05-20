@@ -292,6 +292,10 @@
         keys[idx].disabled = !keys[idx].disabled;
         toast.push(keys[idx].disabled ? t[lang].disableKey : t[lang].enableKey, green);
         keys = keys;
+        if (selectedKey && selectedKey.publickey.sha256 === key.publickey.sha256) {
+          selectedKey.disabled = keys[idx].disabled;
+          selectedKey = selectedKey;
+        }
       }
     } catch (err) {
       toast.push(t[lang].toggleFail + ": " + err, red);
@@ -330,7 +334,9 @@
       {:else}
         <ul class="keys-list">
           {#each keys as key}
-            <li class="key-item {selectedKey && selectedKey.publickey.sha256 === key.publickey.sha256 ? 'active' : ''} {key.disabled ? 'disabled' : ''}" on:click={() => selectKey(key)}>
+            <li class="key-item {selectedKey && selectedKey.publickey.sha256 === key.publickey.sha256 ? 'active' : ''} {key.disabled ? 'disabled' : ''}"
+                on:click={() => selectKey(key)}
+                on:dblclick={() => { if (!settingsData.ProxyModeOfNamedPipe) toggleKey(key); }}>
               <span class="material-icons key-icon">key</span>
               <div class="key-info">
                 <span class="key-name">{key.name || t[lang].unnamedKey}</span>
