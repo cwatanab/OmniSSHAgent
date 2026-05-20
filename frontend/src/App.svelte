@@ -129,6 +129,7 @@
   let togglingKey = null;
 
   let settingsData = { ProxyModeOfNamedPipe: false };
+  let appVersion = "";
 
   onMount(async () => {
     const storedWidth = localStorage.getItem(STORAGE_KEY_SIDEBAR_WIDTH);
@@ -138,6 +139,7 @@
         sidebarWidth = parsed;
       }
     }
+    await loadVersion();
     await loadSettings();
     await loadKeys();
     await applyWindowsTheme();
@@ -200,6 +202,14 @@
     await applyWindowsTheme();
   };
 
+  const loadVersion = async () => {
+    try {
+      appVersion = await window.go.main.App.GetVersion();
+    } catch (err) {
+      console.error("GetVersion err:" + err);
+    }
+  };
+
   const loadSettings = async () => {
     await window.go.main.App.GetSettings()
       .then((savedata) => {
@@ -236,6 +246,7 @@
 
   const handleSettingsSave = async () => {
     await loadSettings();
+    await loadKeys();
     const storedLang = localStorage.getItem(STORAGE_KEY_LANG);
     lang = storedLang && storedLang !== "auto"
       ? storedLang
@@ -373,6 +384,9 @@
         <span class="material-icons welcome-icon">security</span>
         <h2>{t[lang].welcomeTitle}</h2>
         <p>{t[lang].welcomeDesc}</p>
+        {#if appVersion}
+          <div class="welcome-version">v{appVersion}</div>
+        {/if}
       </div>
     {:else if activeView === 'detail' && selectedKey}
       <div class="detail-view">

@@ -262,6 +262,14 @@ html, body {
   max-width: 300px;
 }
 
+.welcome-version {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  margin-top: 10px;
+  user-select: none;
+}
+
 /* Detail View */
 .detail-view {
   display: flex;

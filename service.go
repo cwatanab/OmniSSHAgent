@@ -8,13 +8,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/masahide/OmniSSHAgent/pkg/cygwinsocket"
-	"github.com/masahide/OmniSSHAgent/pkg/namedpipe"
-	"github.com/masahide/OmniSSHAgent/pkg/pageant"
-	"github.com/masahide/OmniSSHAgent/pkg/sshutil"
 	"github.com/masahide/OmniSSHAgent/pkg/store"
 	"github.com/masahide/OmniSSHAgent/pkg/store/local"
-	"github.com/masahide/OmniSSHAgent/pkg/unix"
 )
 
 type Service struct {
@@ -37,70 +32,10 @@ func (s *Service) Start() error {
 		return err
 	}
 	Logger.SetEnable(s.app.settings.SaveData.DebugLog)
+	s.app.pageantCheckFunc = func() {}
 
-	s.app.keyRing = sshutil.NewKeyRing(s.app.settings)
-	if err := s.app.keyRing.AddKeys(); err != nil {
-		log.Printf("KeyRing.AddKeys err: %s", err)
-	}
-
-	// Create a context for agent goroutines so they can be cancelled on shutdown
-	agentCtx, cancel := context.WithCancel(context.Background())
-	s.app.agentCtx = agentCtx
-	s.app.cancelAgents = cancel
-
-	debug := false
-
-	pa := &pageant.Pageant{
-		ExtendedAgent: s.app.keyRing,
-		AppName:       AppName,
-		Debug:         debug,
-		CheckFunc:     func() {}, // No-op for service mode
-	}
-	if s.app.settings.PageantAgent {
-		s.app.wg.Add(1)
-		go func() {
-			defer s.app.wg.Done()
-			pa.RunAgent(s.app.agentCtx)
-		}()
-	}
-	log.Println("Starting pageant...")
-
-	if s.app.settings.NamedPipeAgent {
-		pipeName := ""
-		na := &namedpipe.NamedPipe{ExtendedAgent: s.app.keyRing, Debug: debug, Name: pipeName}
-		log.Println("Starting NamedPipe agent..")
-		s.app.wg.Add(1)
-		go func() {
-			defer s.app.wg.Done()
-			if err := na.RunAgent(s.app.agentCtx); err != nil {
-				log.Printf("NamedPipe agent error: %v", err)
-			}
-		}()
-	}
-
-	if s.app.settings.UnixSocketAgent {
-		ua := &unix.DomainSock{ExtendedAgent: s.app.keyRing, Debug: debug, Path: s.app.settings.UnixSocketPath}
-		log.Println("Start Unix domain socket agent..")
-		s.app.wg.Add(1)
-		go func() {
-			defer s.app.wg.Done()
-			if err := ua.RunAgent(s.app.agentCtx); err != nil {
-				log.Printf("Unix socket agent error: %v", err)
-			}
-		}()
-	}
-
-	if s.app.settings.CygWinAgent {
-		ca := &cygwinsocket.CygwinSock{ExtendedAgent: s.app.keyRing, Debug: debug, Path: s.app.settings.CygWinSocketPath}
-		log.Println("Starting Cygwin unix domain socket agent..")
-		s.app.wg.Add(1)
-		go func() {
-			defer s.app.wg.Done()
-			if err := ca.RunAgent(s.app.agentCtx); err != nil {
-				log.Printf("Cygwin socket agent error: %v", err)
-			}
-		}()
-	}
+	s.app.initializeKeyRing()
+	s.app.startConfiguredAgents()
 
 	// Set up HTTP API router
 	mux := http.NewServeMux()

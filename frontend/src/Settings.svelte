@@ -7,7 +7,6 @@
   import FormField from "@smui/form-field";
   import Checkbox from "@smui/checkbox";
   import { toast } from "@zerodevx/svelte-toast";
-  import Banner from "@smui/banner";
   import { onMount } from "svelte";
 
   export let lang = "en";
@@ -15,8 +14,6 @@
   const t = {
     en: {
       settingsTitle: "Settings",
-      settingsRestartWarning: "These settings will take effect after a restart.",
-      settingsUnderstand: "Understood",
       settingsStartHidden: "Hide the window on launch",
       settingsDebugLog: "Write debug log on startup (useful when tray is unresponsive)",
       settingsOpenLogDir: "Open log directory",
@@ -55,8 +52,6 @@
     },
     ja: {
       settingsTitle: "設定",
-      settingsRestartWarning: "これらの設定は再起動後に有効になります。",
-      settingsUnderstand: "了解",
       settingsStartHidden: "起動時にウィンドウを非表示にする",
       settingsDebugLog: "起動時にデバッグログを書き込む (トレイが反応しない場合に有用)",
       settingsOpenLogDir: "ログディレクトリを開く",
@@ -227,11 +222,6 @@
 </script>
 
 <div class="settings-view">
-  <Banner open fixed mobileStacked content$style="width: 100%; max-width: 100%; box-sizing: border-box;">
-    <Label slot="label">{t[lang].settingsRestartWarning}</Label>
-    <Button slot="actions">{t[lang].settingsUnderstand}</Button>
-  </Banner>
-
   <div class="settings-header">
     <h2>{t[lang].settingsTitle}</h2>
   </div>
@@ -288,7 +278,6 @@
           <div class="settings-item">
             <FormField>
               <Checkbox bind:checked={data.StartHidden} />
-              <span class="material-icons setting-icon checkbox-icon">visibility_off</span>
               <span>{t[lang].settingsStartHidden}</span>
             </FormField>
           </div>
@@ -296,7 +285,6 @@
           <div class="settings-item">
             <FormField>
               <Checkbox bind:checked={data.ShowBalloon} />
-              <span class="material-icons setting-icon checkbox-icon">notifications</span>
               <span>{t[lang].settingsBalloon}</span>
             </FormField>
           </div>
@@ -304,7 +292,6 @@
           <div class="settings-item">
             <FormField>
               <Checkbox bind:checked={data.DebugLog} />
-              <span class="material-icons setting-icon checkbox-icon">bug_report</span>
               <span>{t[lang].settingsDebugLog}</span>
             </FormField>
           </div>
@@ -329,7 +316,6 @@
           <div class="settings-item">
             <FormField>
               <Checkbox bind:checked={data.PageantAgent} />
-              <span class="material-icons setting-icon checkbox-icon">bolt</span>
               <span>{t[lang].settingsPageant}</span>
             </FormField>
           </div>
@@ -339,7 +325,6 @@
                 bind:checked={data.NamedPipeAgent}
                 on:change={namePipeToggle}
               />
-              <span class="material-icons setting-icon checkbox-icon">link</span>
               <span>{t[lang].settingsNamedPipe}</span>
             </FormField>
           </div>
@@ -349,14 +334,12 @@
                 bind:checked={data.ProxyModeOfNamedPipe}
                 on:change={proxyToggle}
               />
-              <span class="material-icons setting-icon checkbox-icon">alt_route</span>
               <span>{t[lang].settingsProxy}</span>
             </FormField>
           </div>
           <div class="settings-item">
             <FormField>
               <Checkbox bind:checked={data.UnixSocketAgent} />
-              <span class="material-icons setting-icon checkbox-icon">lan</span>
               <span>{t[lang].settingsUnix}</span>
             </FormField>
           </div>
@@ -375,7 +358,6 @@
           <div class="settings-item">
             <FormField>
               <Checkbox bind:checked={data.CygWinAgent} />
-              <span class="material-icons setting-icon checkbox-icon">featured_play_list</span>
               <span>{t[lang].settingsCygwin}</span>
             </FormField>
           </div>
@@ -533,8 +515,5 @@
     gap: 8px;
     padding-top: 10px;
     border-top: 1px solid var(--border-color, #e0e0e0);
-  }
-  .settings-view :global(.mdc-banner__actions) {
-    margin-left: auto !important;
   }
 </style>

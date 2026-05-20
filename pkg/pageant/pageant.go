@@ -27,8 +27,17 @@ const (
 
 var (
 	procPostThreadMessage = syscall.NewLazyDLL("user32.dll").NewProc("PostThreadMessageW")
+	procUnregisterClass   = syscall.NewLazyDLL("user32.dll").NewProc("UnregisterClassW")
 	postQuitMessage       = func(threadID uint32) bool {
 		ret, _, _ := procPostThreadMessage.Call(uintptr(threadID), uintptr(winapi.WM_QUIT), 0, 0)
+		return ret != 0
+	}
+	unregisterClass = func(hInstance winapi.HINSTANCE) bool {
+		classNameUTF16, err := syscall.UTF16PtrFromString(className)
+		if err != nil {
+			return false
+		}
+		ret, _, _ := procUnregisterClass.Call(uintptr(unsafe.Pointer(classNameUTF16)), uintptr(hInstance))
 		return ret != 0
 	}
 )
@@ -157,10 +166,10 @@ func (a *Pageant) handleCopyMessage(cdata *copyDataStruct) error {
 	return nil
 }
 
-func initInstance(hInstance winapi.HINSTANCE, nCmdShow int) error {
+func initInstance(hInstance winapi.HINSTANCE, nCmdShow int) (winapi.HWND, error) {
 	classNameUTF16, err := syscall.UTF16PtrFromString(className)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	hWnd := winapi.CreateWindowEx(
@@ -171,11 +180,11 @@ func initInstance(hInstance winapi.HINSTANCE, nCmdShow int) error {
 		0, 0, 0, 0,
 		0, 0, hInstance, nil)
 	if hWnd == 0 {
-		return errors.New("cannot create window")
+		return 0, errors.New("cannot create window")
 	}
 
 	winapi.ShowWindow(hWnd, winapi.SW_SHOW)
-	return nil
+	return hWnd, nil
 }
 
 func (a *Pageant) RunAgent(ctx context.Context) {
@@ -186,12 +195,17 @@ func (a *Pageant) RunAgent(ctx context.Context) {
 	defer runtime.UnlockOSThread()
 
 	hInstance := winapi.GetModuleHandle(nil)
-	a.myRegisterClass(hInstance)
+	registeredClass := a.myRegisterClass(hInstance) != 0
 
-	if err := initInstance(hInstance, winapi.SW_SHOW); err != nil {
+	hWnd, err := initInstance(hInstance, winapi.SW_SHOW)
+	if err != nil {
 		log.Printf("pageant: %v\n", err)
 		return
 	}
+	if registeredClass {
+		defer unregisterClass(hInstance)
+	}
+	defer winapi.DestroyWindow(hWnd)
 
 	threadID := windows.GetCurrentThreadId()
 	stopWatcher := startCancelWatcher(ctx, threadID)

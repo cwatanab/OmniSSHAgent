@@ -29,14 +29,19 @@ import (
 
 // App application struct
 type App struct {
-	ctx          context.Context
-	agentCtx     context.Context
-	ti           *wintray.TrayIcon
-	keyRing      *sshutil.KeyRing
-	settings     *store.Settings
-	wg           sync.WaitGroup
-	cancelAgents context.CancelFunc
-	shutdownOnce sync.Once
+	ctx              context.Context
+	backgroundCtx    context.Context
+	cancelBackground context.CancelFunc
+	agentCtx         context.Context
+	ti               *wintray.TrayIcon
+	keyRing          *sshutil.KeyRing
+	settings         *store.Settings
+	wg               sync.WaitGroup
+	agentWG          sync.WaitGroup
+	agentsMu         sync.Mutex
+	cancelAgents     context.CancelFunc
+	pageantCheckFunc func()
+	shutdownOnce     sync.Once
 }
 
 // NewApp creates a new App application struct
@@ -97,10 +102,16 @@ func trayStr() trayStrings {
 }
 
 func (a *App) setTrayTooltip() {
+	if a.ti == nil {
+		return
+	}
 	ts := trayStr()
 	tooltip := AppName
-	if keys, err := a.keyRing.KeyList(); err == nil {
-		tooltip = fmt.Sprintf(ts.TooltipFmt, AppName, len(keys))
+	if a.keyRing != nil {
+		keys, err := a.keyRing.KeyList()
+		if err == nil {
+			tooltip = fmt.Sprintf(ts.TooltipFmt, AppName, len(keys))
+		}
 	}
 	a.ti.SetTooltip(tooltip)
 }
@@ -130,10 +141,115 @@ func (a *App) systrayOnExit() {
 	a.wg.Done()
 }
 
+func (a *App) initializeKeyRing() {
+	a.keyRing = sshutil.NewKeyRing(a.settings)
+	if err := a.keyRing.AddKeys(); err != nil {
+		log.Printf("KeyRing.AddKeys err: %s", err)
+	}
+	a.keyRing.NotifyCallback = a.notice
+}
+
+func (a *App) startConfiguredAgents() {
+	a.agentsMu.Lock()
+	defer a.agentsMu.Unlock()
+	a.startConfiguredAgentsLocked()
+}
+
+func (a *App) restartConfiguredAgents(rebuildKeyRing bool) {
+	a.agentsMu.Lock()
+	defer a.agentsMu.Unlock()
+	a.stopConfiguredAgentsLocked()
+	if rebuildKeyRing {
+		a.initializeKeyRing()
+	}
+	a.startConfiguredAgentsLocked()
+}
+
+func (a *App) stopConfiguredAgents() {
+	a.agentsMu.Lock()
+	defer a.agentsMu.Unlock()
+	a.stopConfiguredAgentsLocked()
+}
+
+func (a *App) stopConfiguredAgentsLocked() {
+	if a.cancelAgents != nil {
+		a.cancelAgents()
+		a.cancelAgents = nil
+	}
+	a.agentWG.Wait()
+	a.agentCtx = nil
+}
+
+func (a *App) startConfiguredAgentsLocked() {
+	if a.settings == nil || a.keyRing == nil {
+		return
+	}
+	agentCtx, cancel := context.WithCancel(context.Background())
+	a.agentCtx = agentCtx
+	a.cancelAgents = cancel
+
+	debug := false
+	checkFunc := a.pageantCheckFunc
+	if checkFunc == nil {
+		checkFunc = func() {}
+	}
+
+	if a.settings.PageantAgent {
+		pa := &pageant.Pageant{
+			ExtendedAgent: a.keyRing,
+			AppName:       AppName,
+			Debug:         debug,
+			CheckFunc:     checkFunc,
+		}
+		log.Println("Starting pageant...")
+		a.agentWG.Add(1)
+		go func() {
+			defer a.agentWG.Done()
+			pa.RunAgent(agentCtx)
+		}()
+	}
+	if a.settings.NamedPipeAgent {
+		pipeName := ""
+		na := &namedpipe.NamedPipe{ExtendedAgent: a.keyRing, Debug: debug, Name: pipeName}
+		log.Println("Starting NamedPipe agent..")
+		a.agentWG.Add(1)
+		go func() {
+			defer a.agentWG.Done()
+			if err := na.RunAgent(agentCtx); err != nil {
+				log.Printf("NamedPipe agent error: %v", err)
+			}
+		}()
+	}
+	if a.settings.UnixSocketAgent {
+		ua := &unix.DomainSock{ExtendedAgent: a.keyRing, Debug: debug, Path: a.settings.UnixSocketPath}
+		log.Println("Start Unix domain socket agent..")
+		a.agentWG.Add(1)
+		go func() {
+			defer a.agentWG.Done()
+			if err := ua.RunAgent(agentCtx); err != nil {
+				log.Printf("Unix socket agent error: %v", err)
+			}
+		}()
+	}
+	if a.settings.CygWinAgent {
+		ca := &cygwinsocket.CygwinSock{ExtendedAgent: a.keyRing, Debug: debug, Path: a.settings.CygWinSocketPath}
+		log.Println("Starting Cygwin unix domain socket agent..")
+		a.agentWG.Add(1)
+		go func() {
+			defer a.agentWG.Done()
+			if err := ca.RunAgent(agentCtx); err != nil {
+				log.Printf("Cygwin socket agent error: %v", err)
+			}
+		}()
+	}
+}
+
 // startup is called at application startup
 func (a *App) startup(ctx context.Context) {
 	// Perform your setup here
 	a.ctx = ctx
+	a.backgroundCtx, a.cancelBackground = context.WithCancel(context.Background())
+	a.pageantCheckFunc = a.showWindow
 	if a.settings != nil {
 		Logger.SetEnable(a.settings.SaveData.DebugLog)
 	}
@@ -152,66 +268,8 @@ func (a *App) startup(ctx context.Context) {
 		a.ti.Run(a.systrayOnReady, a.systrayOnExit)
 	}()
 
-	debug := false
-	a.keyRing = sshutil.NewKeyRing(a.settings)
-	if err := a.keyRing.AddKeys(); err != nil {
-		log.Printf("KeyRing.AddKeys err: %s", err)
-	}
-	a.keyRing.NotifyCallback = a.notice
-
-	// Create a context for agent goroutines so they can be cancelled on shutdown
-	agentCtx, cancel := context.WithCancel(context.Background())
-	a.agentCtx = agentCtx
-	a.cancelAgents = cancel
-
-	pa := &pageant.Pageant{
-		ExtendedAgent: a.keyRing,
-		AppName:       AppName,
-		Debug:         debug,
-		CheckFunc:     a.showWindow,
-	}
-	if a.settings.PageantAgent {
-		a.wg.Add(1)
-		go func() {
-			defer a.wg.Done()
-			pa.RunAgent(a.agentCtx)
-		}()
-	}
-	log.Println("Starting pageant...")
-	if a.settings.NamedPipeAgent {
-		pipeName := ""
-		na := &namedpipe.NamedPipe{ExtendedAgent: a.keyRing, Debug: debug, Name: pipeName}
-		log.Println("Starting NamedPipe agent..")
-		a.wg.Add(1)
-		go func() {
-			defer a.wg.Done()
-			if err := na.RunAgent(a.agentCtx); err != nil {
-				log.Printf("NamedPipe agent error: %v", err)
-			}
-		}()
-	}
-	if a.settings.UnixSocketAgent {
-		ua := &unix.DomainSock{ExtendedAgent: a.keyRing, Debug: debug, Path: a.settings.UnixSocketPath}
-		log.Println("Start Unix domain socket agent..")
-		a.wg.Add(1)
-		go func() {
-			defer a.wg.Done()
-			if err := ua.RunAgent(a.agentCtx); err != nil {
-				log.Printf("Unix socket agent error: %v", err)
-			}
-		}()
-	}
-	if a.settings.CygWinAgent {
-		ca := &cygwinsocket.CygwinSock{ExtendedAgent: a.keyRing, Debug: debug, Path: a.settings.CygWinSocketPath}
-		log.Println("Starting Cygwin unix domain socket agent..")
-		a.wg.Add(1)
-		go func() {
-			defer a.wg.Done()
-			if err := ca.RunAgent(a.agentCtx); err != nil {
-				log.Printf("Cygwin socket agent error: %v", err)
-			}
-		}()
-	}
+	a.initializeKeyRing()
+	a.startConfiguredAgents()
 
 	// Spawn a background reclaimer to return unused memory to OS periodically
 	a.wg.Add(1)
@@ -221,7 +279,7 @@ func (a *App) startup(ctx context.Context) {
 		defer ticker.Stop()
 		for {
 			select {
-			case <-a.agentCtx.Done():
+			case <-a.backgroundCtx.Done():
 				return
 			case <-ticker.C:
 				rtdebug.FreeOSMemory()
@@ -234,10 +292,14 @@ func (a *App) notice(action string, data interface{}) {
 	switch action {
 	case "Add", "Remove", "RemoveAll":
 		//a.ti.ShowBalloonNotification(action, sshutil.JSONDump(data))
-		runtime.EventsEmit(a.ctx, "LoadKeysEvent")
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "LoadKeysEvent")
+		}
 
 	case "Added", "Removed", "RemovedAll":
-		a.setTrayTooltip()
+		if a.ti != nil {
+			a.setTrayTooltip()
+		}
 
 	case "Sign", "SignWithFlags":
 		switch t := data.(type) {
@@ -265,7 +327,7 @@ func (a *App) onSign(pubkey *agent.Key) error {
 	}
 	ts := trayStr()
 	msg := fmt.Sprintf(ts.KeyUsed, name)
-	if a.settings.ShowBalloon {
+	if a.settings.ShowBalloon && a.ti != nil {
 		a.ti.ShowBalloonNotification(wintray.ID, msg)
 	}
 	return nil
@@ -291,6 +353,10 @@ func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s!", name)
 }
 
+func (a *App) GetVersion() string {
+	return AppVersion
+}
+
 func (a *App) showWindow() {
 	//runtime.LogDebug(a.ctx, "showWindow")
 	runtime.WindowShow(a.ctx)
@@ -305,8 +371,9 @@ func (a *App) Quit() {
 func (a *App) shutdown(ctx context.Context) {
 	a.shutdownOnce.Do(func() {
 		log.Print("shutdown")
-		if a.cancelAgents != nil {
-			a.cancelAgents()
+		a.stopConfiguredAgents()
+		if a.cancelBackground != nil {
+			a.cancelBackground()
 		}
 		if a.ti != nil {
 			a.ti.Quit()
@@ -390,6 +457,7 @@ func (a *App) GetSettings() store.SaveData {
 	return a.settings.SaveData
 }
 func (a *App) Save(s store.SaveData) error {
+	old := a.settings.SaveData
 	a.setDebugLogEnabled(s.DebugLog)
 	a.settings.SaveData.StartHidden = s.StartHidden
 	a.settings.SaveData.PageantAgent = s.PageantAgent
@@ -400,7 +468,25 @@ func (a *App) Save(s store.SaveData) error {
 	a.settings.SaveData.ShowBalloon = s.ShowBalloon
 	a.settings.SaveData.CygWinSocketPath = s.CygWinSocketPath
 	a.settings.SaveData.ProxyModeOfNamedPipe = s.ProxyModeOfNamedPipe
-	return a.settings.Save()
+	if err := a.settings.Save(); err != nil {
+		a.settings.SaveData = old
+		a.setDebugLogEnabled(old.DebugLog)
+		return err
+	}
+	if agentSettingsChanged(old, a.settings.SaveData) {
+		a.restartConfiguredAgents(old.ProxyModeOfNamedPipe != a.settings.ProxyModeOfNamedPipe)
+	}
+	return nil
+}
+
+func agentSettingsChanged(old, current store.SaveData) bool {
+	return old.PageantAgent != current.PageantAgent ||
+		old.NamedPipeAgent != current.NamedPipeAgent ||
+		old.UnixSocketAgent != current.UnixSocketAgent ||
+		old.UnixSocketPath != current.UnixSocketPath ||
+		old.CygWinAgent != current.CygWinAgent ||
+		old.CygWinSocketPath != current.CygWinSocketPath ||
+		old.ProxyModeOfNamedPipe != current.ProxyModeOfNamedPipe
 }
 
 func truncateString(s string) string {

@@ -14,9 +14,9 @@ func TestAppShutdownCancelsAgents(t *testing.T) {
 
 	var app App
 	app.cancelAgents = cancel
-	app.wg.Add(1)
+	app.agentWG.Add(1)
 	go func() {
-		defer app.wg.Done()
+		defer app.agentWG.Done()
 		<-ctx.Done()
 	}()
 
@@ -49,9 +49,9 @@ func TestAppShutdownStopsListener(t *testing.T) {
 	app.agentCtx = ctx
 	app.cancelAgents = cancel
 
-	app.wg.Add(1)
+	app.agentWG.Add(1)
 	go func() {
-		defer app.wg.Done()
+		defer app.agentWG.Done()
 		if err := agentlistener.Serve(app.agentCtx, listener, func(ctx context.Context, c net.Conn) {
 			c.Close()
 		}); err != nil && err != net.ErrClosed {
