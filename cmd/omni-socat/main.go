@@ -40,10 +40,6 @@ func proxy(name string, s specification) {
 	}
 }
 
-func getExeName() string {
-	return appName + ".exe"
-}
-
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	var s specification
@@ -70,7 +66,7 @@ func main() {
 		listMode()
 		return
 	}
-	settings := store.NewSettings(getExeName(), local.NewLocalCred(appName))
+	settings := store.NewSettings(appName, local.NewLocalCred(appName))
 	if err := settings.Load(); err != nil {
 		log.Fatal(err.Error())
 	}

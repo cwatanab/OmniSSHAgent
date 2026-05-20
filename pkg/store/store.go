@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"strings"
+
 	"github.com/masahide/OmniSSHAgent/pkg/sshkey"
 )
 
@@ -98,7 +100,24 @@ func (s *Settings) Load() error {
 	if err != nil {
 		return err
 	}
-	b, err := os.ReadFile(filepath.Join(dir, s.AppName, filename))
+	newPath := filepath.Join(dir, s.AppName, filename)
+	b, err := os.ReadFile(newPath)
+	if err != nil {
+		// Fallback: If AppName is "OmniSSHAgent", check "OmniSSHAgent.exe" for settings.json
+		if !strings.HasSuffix(s.AppName, ".exe") {
+			oldPath := filepath.Join(dir, s.AppName+".exe", filename)
+			if oldB, oldErr := os.ReadFile(oldPath); oldErr == nil {
+				// Migrate to new directory
+				newDir := filepath.Join(dir, s.AppName)
+				if !isDir(newDir) {
+					_ = os.MkdirAll(newDir, 0700)
+				}
+				_ = os.WriteFile(newPath, oldB, 0600)
+				b = oldB
+				err = nil
+			}
+		}
+	}
 	if err != nil {
 		s.SaveData = initSetting()
 		return s.Save()

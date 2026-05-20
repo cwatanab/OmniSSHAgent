@@ -30,10 +30,6 @@ var assets embed.FS
 //go:embed build/appicon.png
 var iconData []byte
 
-func getExeName() string {
-	return filepath.Base(os.Args[0])
-}
-
 func checkAlreadyRunning() {
 	b, err := pageant.AlreadyRunning()
 	if err != nil {
@@ -77,14 +73,14 @@ func main() {
 	checkAlreadyRunning()
 
 	app := NewApp()
-	app.settings = store.NewSettings(getExeName(), local.NewLocalCred(AppName))
+	app.settings = store.NewSettings(AppName, local.NewLocalCred(AppName))
 	if err := app.settings.Load(); err != nil {
 		log.Fatal(err.Error())
 	}
 
 	userCacheDir, err := os.UserCacheDir()
 	if err == nil {
-		userCacheDir = filepath.Join(userCacheDir, getExeName())
+		userCacheDir = filepath.Join(userCacheDir, AppName)
 	} else {
 		log.Printf("cannot set user cache dir for Web View: %v", err)
 		userCacheDir = ""
