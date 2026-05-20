@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/sys/windows/registry"
 
 	"github.com/masahide/OmniSSHAgent/pkg/cygwinsocket"
 	"github.com/masahide/OmniSSHAgent/pkg/namedpipe"
@@ -42,22 +43,88 @@ func NewApp() *App {
 	return &App{}
 }
 
+// trayStrings holds localised strings for the system tray menu.
+type trayStrings struct {
+	TooltipFmt    string // fmt string: AppName + key count
+	ShowWindow    string
+	ShowWindowTip string
+	Quit          string
+	QuitTip       string
+	DebugLog      string
+	DebugLogTip   string
+	OpenLogDir    string
+	OpenLogDirTip string
+	KeyUsed       string // fmt string: key name
+}
+
+var trayEN = trayStrings{
+	TooltipFmt:    "%s - %d keys loaded",
+	ShowWindow:    "Show Window",
+	ShowWindowTip: "Show main window",
+	Quit:          "Quit",
+	QuitTip:       "Quit the whole app",
+	DebugLog:      "Debug log",
+	DebugLogTip:   "Enable debug log file output",
+	OpenLogDir:    "Open log directory",
+	OpenLogDirTip: "Open log directory",
+	KeyUsed:       "SSH Key '%s' was used",
+}
+
+var trayJA = trayStrings{
+	TooltipFmt:    "%s - 鍵 %d 個読み込み済み",
+	ShowWindow:    "ウィンドウを表示",
+	ShowWindowTip: "メインウィンドウを表示します",
+	Quit:          "終了",
+	QuitTip:       "アプリケーションを終了します",
+	DebugLog:      "デバッグログ",
+	DebugLogTip:   "デバッグログファイルの出力を有効にします",
+	OpenLogDir:    "ログディレクトリを開く",
+	OpenLogDirTip: "ログディレクトリを開きます",
+	KeyUsed:       "SSH鍵 '%s' が使用されました",
+}
+
+// getSystemLang returns "ja" when the Windows UI locale starts with "ja", otherwise "en".
+func getSystemLang() string {
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Control Panel\International`, registry.QUERY_VALUE)
+	if err != nil {
+		return "en"
+	}
+	defer k.Close()
+	locale, _, err := k.GetStringValue("LocaleName")
+	if err != nil {
+		return "en"
+	}
+	if len(locale) >= 2 && locale[:2] == "ja" {
+		return "ja"
+	}
+	return "en"
+}
+
+func trayStr() trayStrings {
+	if getSystemLang() == "ja" {
+		return trayJA
+	}
+	return trayEN
+}
+
 func (a *App) setTrayTooltip() {
+	ts := trayStr()
 	tooltip := AppName
 	if keys, err := a.keyRing.KeyList(); err == nil {
-		tooltip = fmt.Sprintf("%s - %d keys loaded", tooltip, len(keys))
+		tooltip = fmt.Sprintf(ts.TooltipFmt, AppName, len(keys))
 	}
 	a.ti.SetTooltip(tooltip)
 }
 
 func (a *App) systrayOnReady() {
 	// Systray operations must be executed on a dedicated tray thread (see doc/dev/issue-tasktry.md).
+	ts := trayStr()
 	a.ti.SetTitle(AppName)
 	a.setTrayTooltip()
-	mShowWindow := a.ti.AddMenuItem("ShowWindow", "Show main window")
-	mQuit := a.ti.AddMenuItem("Quit", "Quit the whole app")
-	mLogCheckBox := a.ti.AddMenuItemCheckbox("Debug log", "Enable debug log file output", false)
-	mLogDirOpen := a.ti.AddMenuItem("Open log directory", "Open log directory")
+	mShowWindow := a.ti.AddMenuItem(ts.ShowWindow, ts.ShowWindowTip)
+	mQuit := a.ti.AddMenuItem(ts.Quit, ts.QuitTip)
+	mLogCheckBox := a.ti.AddMenuItemCheckbox(ts.DebugLog, ts.DebugLogTip, false)
+	mLogDirOpen := a.ti.AddMenuItem(ts.OpenLogDir, ts.OpenLogDirTip)
 	a.debugLogMenuItem = mLogCheckBox
 	a.logDirMenuItem = mLogDirOpen
 	a.applyDebugLogMenuState()
@@ -199,7 +266,8 @@ func (a *App) onSign(pubkey *agent.Key) error {
 	if len(name) == 0 {
 		name = truncateString(privkey.PublicKey.SHA256)
 	}
-	msg := fmt.Sprintf("SSH Key '%s' was used", name)
+	ts := trayStr()
+	msg := fmt.Sprintf(ts.KeyUsed, name)
 	if a.settings.ShowBalloon {
 		a.ti.ShowBalloonNotification(wintray.ID, msg)
 	}
@@ -304,6 +372,10 @@ func (a *App) DeleteKey(sha256 string) error {
 	return a.keyRing.DeleteKeySettings(sha256)
 }
 
+func (a *App) ToggleKey(sha256 string) error {
+	return a.keyRing.ToggleKey(sha256)
+}
+
 func (a *App) KeyList() ([]sshkey.PrivateKeyFile, error) {
 	return a.keyRing.KeyList()
 }
@@ -334,4 +406,40 @@ func truncateString(s string) string {
 		return s
 	}
 	return s[:16] + "..."
+}
+
+// GetAccentColor returns the Windows accent color as a hex string (e.g. "#4a5459")
+func (a *App) GetAccentColor() string {
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Software\Microsoft\Windows\DWM`, registry.QUERY_VALUE)
+	if err != nil {
+		return ""
+	}
+	defer k.Close()
+
+	val, _, err := k.GetIntegerValue("AccentColor")
+	if err != nil {
+		return ""
+	}
+
+	// val is in AABBGGRR format.
+	r := byte(val & 0xFF)
+	g := byte((val >> 8) & 0xFF)
+	b := byte((val >> 16) & 0xFF)
+
+	return fmt.Sprintf("#%02x%02x%02x", r, g, b)
+}
+
+// GetAppsUseLightTheme returns true if Windows is configured to use Light Theme for apps
+func (a *App) GetAppsUseLightTheme() bool {
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Software\Microsoft\Windows\CurrentVersion\Themes\Personalize`, registry.QUERY_VALUE)
+	if err != nil {
+		return false
+	}
+	defer k.Close()
+
+	val, _, err := k.GetIntegerValue("AppsUseLightTheme")
+	if err != nil {
+		return false
+	}
+	return val != 0
 }

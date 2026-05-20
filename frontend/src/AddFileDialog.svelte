@@ -1,9 +1,8 @@
 <script>
   import { createEventDispatcher } from "svelte";
-  import Paper, { Title, Subtitle, Content } from "@smui/paper";
+  import { Title, Content } from "@smui/paper";
   import Dialog, { Actions } from "@smui/dialog";
   import Button, { Label } from "@smui/button";
-  import List, { Item, Text, PrimaryText, SecondaryText } from "@smui/list";
   import Textfield from "@smui/textfield";
   import HelperText from "@smui/textfield/helper-text";
   import Card from "@smui/card";
@@ -11,11 +10,44 @@
   import Switch from "@smui/switch";
   import { toast } from "@zerodevx/svelte-toast";
 
+  export let lang = "en";
+
+  const t = {
+    en: {
+      addKeyTitle: "Add a Private key",
+      addKeyFile: "Private key file",
+      addKeyOpenFile: "Open file",
+      addKeyType: "key type",
+      addKeyEncryption: "Encryption?",
+      addKeyEncrypted: "Encrypted with passphrase",
+      addKeyNotEncrypted: "Not encrypted",
+      addKeyPassphrase: "passphrase",
+      addKeyCheck: "check",
+      addKeyAdd: "Add",
+      addKeyCancel: "Cancel",
+      decryptedSuccess: "Decrypted secret key"
+    },
+    ja: {
+      addKeyTitle: "秘密鍵の追加",
+      addKeyFile: "秘密鍵ファイル",
+      addKeyOpenFile: "ファイルを開く",
+      addKeyType: "鍵の種類",
+      addKeyEncryption: "暗号化",
+      addKeyEncrypted: "パスフレーズで暗号化されています",
+      addKeyNotEncrypted: "暗号化されていません",
+      addKeyPassphrase: "パスフレーズ",
+      addKeyCheck: "チェック",
+      addKeyAdd: "追加",
+      addKeyCancel: "キャンセル",
+      decryptedSuccess: "秘密鍵の復号に成功しました"
+    }
+  };
+
   let open = false;
   let addButton = false;
 
   const red = {
-    duration: 7000, // duration of progress bar tween to the `next` value
+    duration: 7000,
     theme: {
       "--toastBackground": "#F56565",
       "--toastBarBackground": "#C53030",
@@ -72,7 +104,7 @@
         console.debug(pkFile);
         addButton = true;
         if (pkFile.encryption && pkFile.passphrase.length > 0) {
-          toast.push("Decrypted secreet key", green);
+          toast.push(t[lang].decryptedSuccess, green);
         }
         if (pkFile.encryption && pkFile.passphrase.length == 0) {
           addButton = false;
@@ -84,6 +116,10 @@
         toast.push(err, red);
       });
   };
+
+  export function show() {
+    open = true;
+  }
 </script>
 
 <Dialog
@@ -95,7 +131,7 @@
   aria-describedby="mandatory-content"
 >
   <div class="dialog">
-    <Title id="mandatory-title">Add a Private key</Title>
+    <Title id="mandatory-title">{t[lang].addKeyTitle}</Title>
     <Content id="mandatory-content">
       <Card padded>
         <div>
@@ -104,17 +140,17 @@
               <Textfield
                 disabled
                 value={pkFile.filePath}
-                label="Private key file"
+                label={t[lang].addKeyFile}
                 style="width: 100%;"
                 helperLine$style="width: 100%;"
               >
-                <HelperText slot=".ppk, id_rsa..." />
+                <HelperText slot="helper">.ppk, id_rsa...</HelperText>
               </Textfield>
             </FormField>
           </div>
           <div>
             <Button on:click={openFile} variant="raised">
-              <Label>Open file</Label>
+              <Label>{t[lang].addKeyOpenFile}</Label>
             </Button>
           </div>
           <div>
@@ -122,11 +158,11 @@
               <Textfield
                 disabled
                 value={keytype}
-                label="key type"
+                label={t[lang].addKeyType}
                 style="width: 100%;"
                 helperLine$style="width: 100%;"
               >
-                <HelperText slot="private key type" />
+                <HelperText slot="helper">private key type</HelperText>
               </Textfield>
             </FormField>
           </div>
@@ -135,12 +171,12 @@
               <Switch
                 bind:checked={pkFile.encryption}
                 disabled
-                value="Encryption?"
+                value={t[lang].addKeyEncryption}
               />
               <span
                 >{pkFile.encryption
-                  ? "Encrypted with passphrase"
-                  : "Not encrypted"}</span
+                  ? t[lang].addKeyEncrypted
+                  : t[lang].addKeyNotEncrypted}</span
               >
             </FormField>
           </div>
@@ -149,15 +185,15 @@
               <Textfield
                 bind:value={pkFile.passphrase}
                 type="password"
-                label="passphrase"
+                label={t[lang].addKeyPassphrase}
                 style="width: 100%;"
                 helperLine$style="width: 100%;"
               >
-                <HelperText slot="passphrase of private key" />
+                <HelperText slot="helper">passphrase of private key</HelperText>
               </Textfield>
             </FormField>
             <Button on:click={checkKeyType}>
-              <Label>check</Label>
+              <Label>{t[lang].addKeyCheck}</Label>
             </Button>
           {/if}
         </div>
@@ -166,19 +202,15 @@
     <Actions>
       {#if addButton}
         <Button on:click={add}>
-          <Label>Add</Label>
+          <Label>{t[lang].addKeyAdd}</Label>
         </Button>
       {/if}
       <Button on:click={() => (open = false)}>
-        <Label>Cancel</Label>
+        <Label>{t[lang].addKeyCancel}</Label>
       </Button>
     </Actions>
   </div>
 </Dialog>
-
-<Button on:click={() => (open = true)}>
-  <Label>Open new file</Label>
-</Button>
 
 <style>
   .dialog {

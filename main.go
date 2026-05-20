@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"log"
 	"os"
 	"path/filepath"
@@ -46,6 +47,24 @@ func checkAlreadyRunning() {
 var Logger *filelog.FileLog
 
 func main() {
+	isService := flag.Bool("service", false, "run as a headless background service")
+	port := flag.Int("port", 53210, "port for the HTTP API service")
+	flag.Parse()
+
+	if *isService {
+		Logger = filelog.New(AppName, 1)
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+		log.SetOutput(Logger)
+
+		checkAlreadyRunning()
+
+		svc := NewService(*port)
+		if err := svc.Start(); err != nil {
+			log.Fatalf("failed to start service: %v", err)
+		}
+		select {} // Keep service running
+	}
+
 	Logger = filelog.New(AppName, 1)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetOutput(Logger)

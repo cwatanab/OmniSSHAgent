@@ -37,6 +37,7 @@ type KeyRing struct {
 	keyring        agent.ExtendedAgent
 	settings       *store.Settings
 	NotifyCallback func(action string, data interface{})
+	disabledKeys   map[string]bool
 }
 
 // AddKeySettings saves PrivateKeyFile informatio in the store
@@ -211,7 +212,7 @@ func CheckKeyType(filePath string, passPhrase string) (*sshkey.PrivateKeyFile, e
 
 // NewKeyRing an Agent that holds keys in memory.
 func NewKeyRing(s *store.Settings) *KeyRing {
-	k := &KeyRing{settings: s}
+	k := &KeyRing{settings: s, disabledKeys: make(map[string]bool)}
 	if s.ProxyModeOfNamedPipe {
 		k.keyring = &namedpipe.NamedPipeClient{}
 		return k
@@ -221,7 +222,6 @@ func NewKeyRing(s *store.Settings) *KeyRing {
 		k.keyring = extendedAgent
 		return k
 	}
-	// Wrap the basic Agent with ExtendedAgent methods
 	k.keyring = &extendedKeyringWrapper{Agent: a}
 	return k
 }
@@ -266,7 +266,8 @@ func (k *KeyRing) listPublickeys() ([]sshkey.PublicKey, error) {
 }
 
 func (k *KeyRing) RemoveKey(sha256 string) error {
-	list, err := k.List()
+	delete(k.disabledKeys, sha256)
+	list, err := k.keyring.List()
 	if err != nil {
 		return err
 	}
@@ -279,6 +280,19 @@ func (k *KeyRing) RemoveKey(sha256 string) error {
 			return k.Remove(pubkey)
 		}
 	}
+	return nil
+}
+
+func (k *KeyRing) ToggleKey(sha256 string) error {
+	if k.disabledKeys[sha256] {
+		delete(k.disabledKeys, sha256)
+		k.notice("Add", sha256)
+		k.notice("Added", sha256)
+		return nil
+	}
+	k.disabledKeys[sha256] = true
+	k.notice("Remove", sha256)
+	k.notice("Removed", sha256)
 	return nil
 }
 
@@ -305,15 +319,27 @@ func (k *KeyRing) mergeKeyList(agentKeys []sshkey.PublicKey) ([]sshkey.PrivateKe
 	for i := range agentKeys {
 		key := getKey(k.settings.Keys, agentKeys[i])
 		if key == nil {
-			res = append(res, sshkey.PrivateKeyFile{PublicKey: agentKeys[i]})
+			name := agentKeys[i].Comment
+			res = append(res, sshkey.PrivateKeyFile{
+				Name:      name,
+				PublicKey: agentKeys[i],
+				Disabled:  k.disabledKeys[agentKeys[i].SHA256],
+			})
 			continue
 		}
-		res = append(res, *key)
+		k2 := *key
+		if len(k2.Name) == 0 {
+			k2.Name = agentKeys[i].Comment
+		}
+		k2.Disabled = k.disabledKeys[agentKeys[i].SHA256]
+		res = append(res, k2)
 	}
 	for i := range k.settings.Keys {
 		if !hasKey(agentKeys, k.settings.Keys[i]) {
-			res = append(res, k.settings.Keys[i])
-			log.Printf("mergeKeyList-key:%s", JSONDump(k.settings.Keys[i]))
+			k2 := k.settings.Keys[i]
+			k2.Disabled = k.disabledKeys[k2.PublicKey.SHA256]
+			res = append(res, k2)
+			log.Printf("mergeKeyList-key:%s", JSONDump(k2))
 		}
 	}
 	return res, nil
@@ -365,7 +391,9 @@ func (k *KeyRing) List() ([]*agent.Key, error) {
 	return k.keyring.List()
 }
 func (k *KeyRing) Sign(key ssh.PublicKey, data []byte) (*ssh.Signature, error) {
-	//k.notice("Sign", map[string]interface{}{"publickey": key.Marshal(), "data": data})
+	if k.disabledKeys[ssh.FingerprintSHA256(key)] {
+		return nil, errors.New("key is disabled")
+	}
 	k.notice("Sign", key)
 	defer k.notice("Signed", key)
 	return k.keyring.Sign(key, data)
@@ -382,6 +410,7 @@ func (k *KeyRing) Remove(key ssh.PublicKey) error {
 	return k.keyring.Remove(key)
 }
 func (k *KeyRing) RemoveAll() error {
+	k.disabledKeys = make(map[string]bool)
 	k.notice("RemoveAll", "")
 	defer k.notice("RemovedAll", "")
 	return k.keyring.RemoveAll()
@@ -402,7 +431,9 @@ func (k *KeyRing) Signers() ([]ssh.Signer, error) {
 	return k.keyring.Signers()
 }
 func (k *KeyRing) SignWithFlags(key ssh.PublicKey, data []byte, flags agent.SignatureFlags) (*ssh.Signature, error) {
-	//k.notice("SignWithFlags", map[string]interface{}{"publickey": key.Marshal(), "data": data, "flags": flags})
+	if k.disabledKeys[ssh.FingerprintSHA256(key)] {
+		return nil, errors.New("key is disabled")
+	}
 	k.notice("SignWithFlags", key)
 	defer k.notice("SignedWithFlags", key)
 	return k.keyring.SignWithFlags(key, data, flags)

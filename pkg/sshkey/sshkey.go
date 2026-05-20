@@ -19,6 +19,7 @@ type PrivateKeyFile struct {
 	Encryption bool      `json:"encryption"`
 	Passphrase string    `json:"passphrase"`
 	PublicKey  PublicKey `json:"publickey"`
+	Disabled   bool      `json:"disabled"`
 }
 
 // PublicKey Publick key file information interface with wails.

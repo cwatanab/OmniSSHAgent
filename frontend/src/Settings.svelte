@@ -1,20 +1,102 @@
 <script>
-  import { Title, Content } from "@smui/paper";
-  import Dialog, { Actions } from "@smui/dialog";
+  import { createEventDispatcher } from "svelte";
   import Button, { Label } from "@smui/button";
   import Textfield from "@smui/textfield";
   import HelperText from "@smui/textfield/helper-text";
   import Card from "@smui/card";
   import FormField from "@smui/form-field";
-  import Switch from "@smui/switch";
+  import Checkbox from "@smui/checkbox";
   import { toast } from "@zerodevx/svelte-toast";
-  import IconButton from "@smui/icon-button";
   import Banner from "@smui/banner";
+  import { onMount } from "svelte";
 
-  let open = false;
+  export let lang = "en";
+
+  const t = {
+    en: {
+      settingsTitle: "Settings",
+      settingsRestartWarning: "These settings will take effect after a restart.",
+      settingsUnderstand: "Understood",
+      settingsStartHidden: "Hide the window on launch",
+      settingsDebugLog: "Write debug log on startup (useful when tray is unresponsive)",
+      settingsBalloon: "Show a balloon notification when an SSH key is used",
+      settingsPageant: "Enable Pageant",
+      settingsNamedPipe: "Enable Named pipe agent",
+      settingsUnix: "Enable Unix domain socket agent",
+      settingsUnixPath: "Unix domain socket file path (WSL1):",
+      settingsUnixHelper: "Set the path of Unix domain socket file",
+      settingsCygwin: "Enable Cygwin unix domain socket agent",
+      settingsCygwinPath: "Cygwin Unix domain socket file path (MSYS2):",
+      settingsCygwinHelper: "Set the path of Cygwin(MSYS2) Unix domain socket file",
+      settingsProxy: "Enable proxy mode for OpenSSH agent (also compatible with 1Password)",
+      settingsLanguage: "Language",
+      settingsLanguageAuto: "Auto",
+      settingsLanguageJa: "Japanese",
+      settingsLanguageEn: "English",
+      settingsTheme: "Theme",
+      settingsThemeAuto: "Auto",
+      settingsThemeDark: "Dark",
+      settingsThemeLight: "Light",
+      settingsAccent: "Accent color",
+      settingsAccentDefault: "Default (Windows)",
+      settingsAccentBlue: "Blue",
+      settingsAccentIndigo: "Indigo",
+      settingsAccentTeal: "Teal",
+      settingsAccentEmerald: "Emerald",
+      settingsAccentSunset: "Sunset",
+      settingsAccentRose: "Rose",
+      settingsAccentCustom: "Custom...",
+      settingsSave: "Save",
+      settingsCancel: "Cancel",
+      settingsSaved: "Saved the settings",
+      sectionGeneral: "General Settings",
+      sectionAgent: "SSH Agent Settings"
+    },
+    ja: {
+      settingsTitle: "設定",
+      settingsRestartWarning: "これらの設定は再起動後に有効になります。",
+      settingsUnderstand: "了解",
+      settingsStartHidden: "起動時にウィンドウを非表示にする",
+      settingsDebugLog: "起動時にデバッグログを書き込む (トレイが反応しない場合に有用)",
+      settingsBalloon: "SSH鍵が使用されたときにバルーン通知を表示する",
+      settingsPageant: "Pageant を有効にする",
+      settingsNamedPipe: "Named pipe エージェントを有効にする",
+      settingsUnix: "Unix ドメインソケットエージェントを有効にする",
+      settingsUnixPath: "Unix ドメインソケットファイルパス (WSL1):",
+      settingsUnixHelper: "Unix ドメインソケットファイルのパスを指定します",
+      settingsCygwin: "Cygwin Unix ドメインソケットエージェントを有効にする",
+      settingsCygwinPath: "Cygwin Unix ドメインソケットファイルパス (MSYS2):",
+      settingsCygwinHelper: "Cygwin(MSYS2) Unix ドメインソケットファイルのパスを指定します",
+      settingsProxy: "OpenSSH エージェントのプロキシモードを有効にする (1Password 互換)",
+      settingsLanguage: "言語",
+      settingsLanguageAuto: "自動",
+      settingsLanguageJa: "日本語",
+      settingsLanguageEn: "英語",
+      settingsTheme: "テーマ",
+      settingsThemeAuto: "自動",
+      settingsThemeDark: "ダーク",
+      settingsThemeLight: "ライト",
+      settingsAccent: "アクセントカラー",
+      settingsAccentDefault: "デフォルト (Windows)",
+      settingsAccentBlue: "ブルー",
+      settingsAccentIndigo: "インディゴ",
+      settingsAccentTeal: "ティール",
+      settingsAccentEmerald: "エメラルド",
+      settingsAccentSunset: "サンセット",
+      settingsAccentRose: "ローズ",
+      settingsAccentCustom: "カスタム...",
+      settingsSave: "保存",
+      settingsCancel: "キャンセル",
+      settingsSaved: "設定を保存しました",
+      sectionGeneral: "一般設定",
+      sectionAgent: "SSHエージェント設定"
+    }
+  };
+
+  const dispatch = createEventDispatcher();
 
   const red = {
-    duration: 7000, // duration of progress bar tween to the `next` value
+    duration: 7000,
     theme: {
       "--toastBackground": "#F56565",
       "--toastBarBackground": "#C53030",
@@ -40,210 +122,401 @@
     DebugLog: false,
   };
 
-  const openDialog = async () => {
-    await window.go.main.App.GetSettings()
-      .then((savedata) => {
-        console.log(savedata);
-        data = { ...savedata };
-        open = true;
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.push(err, red);
-      });
+  const STORAGE_KEY_LANG = "omni-settings-lang";
+  const STORAGE_KEY_THEME = "omni-settings-theme";
+  let uiLang = "auto";
+  let uiTheme = "auto";
+
+  const accentColorsMap = {
+    blue: "#0078d4",
+    indigo: "#6366f1",
+    teal: "#0d9488",
+    emerald: "#10b981",
+    sunset: "#f97316",
+    rose: "#f43f5e",
   };
+
+  let windowsAccentColor = "#0078d4";
+  let customAccentColor = "#0078d4";
+  let uiAccent = "default";
+
+  $: effectiveAccentColor = (() => {
+    if (uiAccent === "default") return windowsAccentColor;
+    if (uiAccent === "custom") return customAccentColor;
+    return accentColorsMap[uiAccent] || windowsAccentColor;
+  })();
+
+  onMount(async () => {
+    try {
+      const savedata = await window.go.main.App.GetSettings();
+      data = { ...savedata };
+    } catch (err) {
+      console.error(err);
+      toast.push(err, red);
+    }
+    const storedLang = localStorage.getItem(STORAGE_KEY_LANG);
+    if (storedLang) uiLang = storedLang;
+    const storedTheme = localStorage.getItem(STORAGE_KEY_THEME);
+    if (storedTheme) uiTheme = storedTheme;
+
+    try {
+      const winColor = await window.go.main.App.GetAccentColor();
+      if (winColor) windowsAccentColor = winColor;
+    } catch (e) {
+      console.error("Failed to load Windows accent color:", e);
+    }
+
+    const storedAccent = localStorage.getItem("omni-settings-accent");
+    if (storedAccent) {
+      if (accentColorsMap[storedAccent]) {
+        uiAccent = storedAccent;
+      } else if (storedAccent === "default") {
+        uiAccent = "default";
+      } else {
+        uiAccent = "custom";
+        customAccentColor = storedAccent;
+      }
+    }
+  });
+
   const save = async () => {
-    await window.go.main.App.Save(data)
-      .then(() => {
-        open = false;
-        toast.push("Saved the settings", green);
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.push(err, red);
-      });
+    try {
+      await window.go.main.App.Save(data);
+      localStorage.setItem(STORAGE_KEY_LANG, uiLang);
+      localStorage.setItem(STORAGE_KEY_THEME, uiTheme);
+
+      let accentToStore = uiAccent;
+      if (uiAccent === "custom") {
+        accentToStore = customAccentColor;
+      }
+      localStorage.setItem("omni-settings-accent", accentToStore);
+
+      toast.push(t[lang].settingsSaved, green);
+      dispatch("save");
+    } catch (err) {
+      console.error(err);
+      toast.push(err, red);
+    }
   };
-  const namePipeToggle = async (e) => {
+
+  const cancel = () => {
+    dispatch("cancel");
+  };
+
+  const namePipeToggle = () => {
     if (data.ProxyModeOfNamedPipe) {
       data.ProxyModeOfNamedPipe = false;
     }
   };
-  const proxyToggle = async (e) => {
+  const proxyToggle = () => {
     if (data.ProxyModeOfNamedPipe) {
       data.NamedPipeAgent = false;
     }
   };
 </script>
 
-<Dialog
-  bind:open
-  scrimClickAction=""
-  escapeKeyAction=""
-  surface$style="width: 850px; max-width: calc(100vw - 32px);"
-  aria-labelledby="mandatory-title"
-  aria-describedby="mandatory-content"
->
-  <Banner open fixed mobileStacked content$style="max-width: max-content;">
-    <Label slot="label">These settings will take effect after a restart.</Label>
-    <Button slot="actions">Understood</Button>
+<div class="settings-view">
+  <Banner open fixed mobileStacked content$style="width: 100%; max-width: 100%; box-sizing: border-box;">
+    <Label slot="label">{t[lang].settingsRestartWarning}</Label>
+    <Button slot="actions">{t[lang].settingsUnderstand}</Button>
   </Banner>
-  <div class="dialog">
-    <Title id="mandatory-title">Settings</Title>
-    <Content id="mandatory-content">
+
+  <div class="settings-header">
+    <h2>{t[lang].settingsTitle}</h2>
+  </div>
+
+  <div class="settings-content">
+    <div class="settings-section">
+      <h3 class="section-title">
+        <span class="material-icons section-icon">tune</span>
+        {t[lang].sectionGeneral}
+      </h3>
       <Card padded>
-        <div>
-          <div>
-            <FormField>
-              <Switch
-                bind:checked={data.StartHidden}
-                value="Minimize to system tray on launch?"
-              />
-              <span
-                >{data.StartHidden
-                  ? "Hide the window on launch"
-                  : "Show window on launch"}</span
-              >
-            </FormField>
+        <div class="settings-list">
+          <div class="settings-item settings-select-item">
+            <span class="material-icons setting-icon">language</span>
+            <label class="settings-select-label" for="lang-select">{t[lang].settingsLanguage}</label>
+            <select id="lang-select" class="settings-select" bind:value={uiLang}>
+              <option value="auto">{t[lang].settingsLanguageAuto}</option>
+              <option value="ja">{t[lang].settingsLanguageJa}</option>
+              <option value="en">{t[lang].settingsLanguageEn}</option>
+            </select>
           </div>
-          <div>
-            <FormField>
-              <Switch
-                bind:checked={data.DebugLog}
-                value="Write debug log on startup?"
-              />
-              <span
-                >{data.DebugLog
-                  ? "Write debug log on startup (useful when tray is unresponsive)"
-                  : "Do not write debug log on startup"}</span
-              >
-            </FormField>
+
+          <div class="settings-item settings-select-item">
+            <span class="material-icons setting-icon">dark_mode</span>
+            <label class="settings-select-label" for="theme-select">{t[lang].settingsTheme}</label>
+            <select id="theme-select" class="settings-select" bind:value={uiTheme}>
+              <option value="auto">{t[lang].settingsThemeAuto}</option>
+              <option value="dark">{t[lang].settingsThemeDark}</option>
+              <option value="light">{t[lang].settingsThemeLight}</option>
+            </select>
           </div>
-          <div>
-            <FormField>
-              <Switch
-                bind:checked={data.ShowBalloon}
-                value="Show a balloon notification when an SSH key is used"
-              />
-              <span
-                >{data.ShowBalloon
-                  ? "Show a balloon notification when an SSH key is used"
-                  : "Do not show a balloon notification when an SSH key is used"}</span
-              >
-            </FormField>
-          </div>
-          <div>
-            <FormField>
-              <Switch bind:checked={data.PageantAgent} value="Enable pageant" />
-              <span
-                >{data.PageantAgent
-                  ? "Enable Pageant"
-                  : "Disable pageant"}</span
-              >
-            </FormField>
-          </div>
-          <div>
-            <FormField>
-              <Switch
-                bind:checked={data.NamedPipeAgent}
-                on:SMUISwitch:change={namePipeToggle}
-                value="Enable Named pipe agent"
-              />
-              <span
-                >{data.NamedPipeAgent
-                  ? "Enable Named pipe agent"
-                  : "Disable Named pipe agent"}</span
-              >
-            </FormField>
-          </div>
-          <div>
-            <FormField>
-              <Switch
-                bind:checked={data.UnixSocketAgent}
-                value="Enable Unix domain socket agent"
-              />
-              <span
-                >{data.UnixSocketAgent
-                  ? "Enable Unix domain socket agent"
-                  : "Disable Unix domain socket agent"}</span
-              >
-            </FormField>
-          </div>
-          {#if data.UnixSocketAgent}
-            <div>
-              <FormField style="width: 100%;">
-                <Textfield
-                  bind:value={data.UnixSocketPath}
-                  label="Unix domain socket file path(WSL1):"
-                  style="width: 100%;"
-                  helperLine$style="width: 100%;"
-                >
-                  <HelperText slot="Set the path of Unix domain socket file" />
-                </Textfield>
-              </FormField>
+
+          <div class="settings-item settings-select-item">
+            <span class="material-icons setting-icon">palette</span>
+            <label class="settings-select-label" for="accent-select">{t[lang].settingsAccent}</label>
+            <div class="accent-picker-container">
+              <select id="accent-select" class="settings-select" bind:value={uiAccent}>
+                <option value="default">{t[lang].settingsAccentDefault}</option>
+                <option value="blue">{t[lang].settingsAccentBlue}</option>
+                <option value="indigo">{t[lang].settingsAccentIndigo}</option>
+                <option value="teal">{t[lang].settingsAccentTeal}</option>
+                <option value="emerald">{t[lang].settingsAccentEmerald}</option>
+                <option value="sunset">{t[lang].settingsAccentSunset}</option>
+                <option value="rose">{t[lang].settingsAccentRose}</option>
+                <option value="custom">{t[lang].settingsAccentCustom}</option>
+              </select>
+              {#if uiAccent === 'custom'}
+                <input type="color" class="accent-color-picker" bind:value={customAccentColor} />
+              {/if}
+              <span class="accent-preview-dot" style="background-color: {effectiveAccentColor};"></span>
             </div>
-          {/if}
-          <div>
+          </div>
+
+          <div class="settings-item">
             <FormField>
-              <Switch
-                bind:checked={data.CygWinAgent}
-                value="Enable Cygwin unix domain socket agent"
-              />
-              <span
-                >{data.CygWinAgent
-                  ? "Enable Cygwin unix domain socket agent"
-                  : "Disable Cygwin unix domain socket agent"}</span
-              >
+              <Checkbox bind:checked={data.StartHidden} />
+              <span class="material-icons setting-icon checkbox-icon">visibility_off</span>
+              <span>{t[lang].settingsStartHidden}</span>
             </FormField>
           </div>
-          {#if data.CygWinAgent}
-            <div>
-              <FormField style="width: 100%;">
-                <Textfield
-                  bind:value={data.CygWinSocketPath}
-                  label="Cygwin Unix domain socket file path(MSYS2):"
-                  style="width: 100%;"
-                  helperLine$style="width: 100%;"
-                >
-                  <HelperText
-                    slot="Set the path of Cygwin(MSYS2) Unix domain socket file"
-                  />
-                </Textfield>
-              </FormField>
-            </div>
-          {/if}
-          <div>
+
+          <div class="settings-item">
             <FormField>
-              <Switch
-                bind:checked={data.ProxyModeOfNamedPipe}
-                on:SMUISwitch:change={proxyToggle}
-                value="Enable proxy mode for OpenSSH agent (also compatible with 1Password)"
-              />
-              <span
-                >{data.ProxyModeOfNamedPipe
-                  ? "Enable proxy mode for OpenSSH agent (also compatible with 1Password)"
-                  : "Disable proxy mode for OpenSSH agent (also compatible with 1Password)"}</span
-              >
+              <Checkbox bind:checked={data.ShowBalloon} />
+              <span class="material-icons setting-icon checkbox-icon">notifications</span>
+              <span>{t[lang].settingsBalloon}</span>
+            </FormField>
+          </div>
+
+          <div class="settings-item">
+            <FormField>
+              <Checkbox bind:checked={data.DebugLog} />
+              <span class="material-icons setting-icon checkbox-icon">bug_report</span>
+              <span>{t[lang].settingsDebugLog}</span>
             </FormField>
           </div>
         </div>
       </Card>
-    </Content>
-    <Actions>
-      <Button on:click={save}>
-        <Label>OK</Label>
-      </Button>
-      <Button on:click={() => (open = false)}>
-        <Label>Cancel</Label>
-      </Button>
-    </Actions>
-  </div>
-</Dialog>
+    </div>
 
-<IconButton on:click={openDialog} class="material-icons">build</IconButton>
+    <div class="settings-section">
+      <h3 class="section-title">
+        <span class="material-icons section-icon">terminal</span>
+        {t[lang].sectionAgent}
+      </h3>
+      <Card padded>
+        <div class="settings-list">
+          <div class="settings-item">
+            <FormField>
+              <Checkbox bind:checked={data.PageantAgent} />
+              <span class="material-icons setting-icon checkbox-icon">bolt</span>
+              <span>{t[lang].settingsPageant}</span>
+            </FormField>
+          </div>
+          <div class="settings-item">
+            <FormField>
+              <Checkbox
+                bind:checked={data.NamedPipeAgent}
+                on:change={namePipeToggle}
+              />
+              <span class="material-icons setting-icon checkbox-icon">link</span>
+              <span>{t[lang].settingsNamedPipe}</span>
+            </FormField>
+          </div>
+          <div class="settings-item">
+            <FormField>
+              <Checkbox
+                bind:checked={data.ProxyModeOfNamedPipe}
+                on:change={proxyToggle}
+              />
+              <span class="material-icons setting-icon checkbox-icon">alt_route</span>
+              <span>{t[lang].settingsProxy}</span>
+            </FormField>
+          </div>
+          <div class="settings-item">
+            <FormField>
+              <Checkbox bind:checked={data.UnixSocketAgent} />
+              <span class="material-icons setting-icon checkbox-icon">lan</span>
+              <span>{t[lang].settingsUnix}</span>
+            </FormField>
+          </div>
+          {#if data.UnixSocketAgent}
+            <div class="settings-field">
+              <Textfield
+                bind:value={data.UnixSocketPath}
+                label={t[lang].settingsUnixPath}
+                style="width: 100%;"
+                helperLine$style="width: 100%;"
+              >
+                <HelperText slot="helper">{t[lang].settingsUnixHelper}</HelperText>
+              </Textfield>
+            </div>
+          {/if}
+          <div class="settings-item">
+            <FormField>
+              <Checkbox bind:checked={data.CygWinAgent} />
+              <span class="material-icons setting-icon checkbox-icon">featured_play_list</span>
+              <span>{t[lang].settingsCygwin}</span>
+            </FormField>
+          </div>
+          {#if data.CygWinAgent}
+            <div class="settings-field">
+              <Textfield
+                bind:value={data.CygWinSocketPath}
+                label={t[lang].settingsCygwinPath}
+                style="width: 100%;"
+                helperLine$style="width: 100%;"
+              >
+                <HelperText slot="helper">{t[lang].settingsCygwinHelper}</HelperText>
+              </Textfield>
+            </div>
+          {/if}
+        </div>
+      </Card>
+    </div>
+  </div>
+
+  <div class="settings-actions">
+    <Button variant="raised" on:click={save}>
+      <Label>{t[lang].settingsSave}</Label>
+    </Button>
+    <Button on:click={cancel}>
+      <Label>{t[lang].settingsCancel}</Label>
+    </Button>
+  </div>
+</div>
 
 <style>
-  .dialog {
-    margin-left: 8px;
-    margin-right: 8px;
+  .settings-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .settings-header {
+    margin-bottom: 8px;
+  }
+  .settings-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .settings-content {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .section-title {
+    margin: 4px 0 2px 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-icon {
+    font-size: 20px;
+    color: var(--text-secondary, #666);
+    text-transform: none !important;
+  }
+  .setting-icon {
+    font-size: 18px;
+    color: var(--text-secondary, #666);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .checkbox-icon {
+    margin-right: 6px;
+  }
+  .settings-item {
+    display: flex;
+    align-items: center;
+  }
+  .settings-item :global(.mdc-form-field) {
+    height: 32px;
+  }
+  .settings-content :global(.mdc-card) {
+    padding: 12px 10px !important;
+  }
+  .accent-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .accent-color-picker {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border-color, #e0e0e0);
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  .accent-preview-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color, #e0e0e0);
+    display: inline-block;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  .settings-field {
+    padding-left: 52px;
+    margin-top: -4px;
+  }
+  .settings-select-item {
+    gap: 12px;
+  }
+  .settings-select-label {
+    font-size: 14px;
+    min-width: 60px;
+  }
+  .settings-select {
+    padding: 8px 12px;
+    border: 1px solid var(--mdc-text-field-outlined-idle-border-color, #ccc);
+    border-radius: 4px;
+    background-color: var(--bg-color, #fff);
+    color: var(--text-color, #000);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+  }
+  .settings-select:hover {
+    border-color: var(--primary-color, #0078d4);
+  }
+  .settings-select:focus {
+    border-color: var(--primary-color, #0078d4);
+    border-width: 2px;
+  }
+  .settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+  }
+  .settings-view :global(.mdc-banner__actions) {
+    margin-left: auto !important;
   }
 </style>
