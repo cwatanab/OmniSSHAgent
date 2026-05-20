@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	rtdebug "runtime/debug"
 	"sync"
@@ -323,9 +324,20 @@ func (a *App) setDebugLogEnabled(enabled bool) {
 
 // OpenLogDir opens the directory containing the log file in Windows Explorer
 func (a *App) OpenLogDir() {
-	if Logger != nil && Logger.FilePath != "" {
-		dir := filepath.Dir(Logger.FilePath)
-		winopen.Open(dir)
+	if Logger != nil {
+		dir := ""
+		if Logger.FilePath != "" {
+			dir = filepath.Dir(Logger.FilePath)
+		} else {
+			confDir, err := os.UserConfigDir()
+			if err == nil {
+				dir = filepath.Join(confDir, AppName, "logs")
+			}
+		}
+		if dir != "" {
+			_ = os.MkdirAll(dir, 0755)
+			winopen.Open(dir)
+		}
 	}
 }
 

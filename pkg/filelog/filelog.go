@@ -96,7 +96,7 @@ func (fl *FileLog) createFilePath() (string, error) {
 	}
 	year := fl.Date.Format("2006")
 	monthDate := fl.Date.Format("01-02")
-	return filepath.Join(confDir, fl.AppName, year, monthDate+".log"), nil
+	return filepath.Join(confDir, fl.AppName, "logs", year, monthDate+".log"), nil
 }
 
 // Write writes the provided byte slice to the log file, creating the file if necessary.
