@@ -4,10 +4,10 @@
 
 | | | |
 |---|---|---|
-| ![Home](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-v2-home.png?raw=true) | ![Add Key](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-v2-add.png?raw=true) | ![Key Detail](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-v2-detail.png?raw=true) |
+| ![Home](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/screen-v2-home.png?raw=true) | ![Add Key](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/screen-v2-add.png?raw=true) | ![Key Detail](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/screen-v2-detail.png?raw=true) |
 | *Welcome* | *Add Key* | *Key Detail* |
 
-| ![Settings](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-v2-setup.png?raw=true) |
+| ![Settings](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/screen-v2-setup.png?raw=true) |
 |---|
 | *Settings* |
 
@@ -25,7 +25,7 @@ This fork features a completely redesigned UI with the following improvements ov
 - **App version display** — shown on the welcome screen
 - **Color-coded toast notifications** — green for success, red for errors
 
-![OmniSSHAgent Fixed](https://github.com/robertt-smg/OmniSSHAgent/blob/main/build/appicon.png?raw=true)
+![OmniSSHAgent Fixed](https://github.com/cwatanab/OmniSSHAgent/blob/main/build/appicon.png?raw=true)
 
 ## About
 
@@ -38,12 +38,12 @@ I only fixed a dead lock issue ...
 ### The Chaotic State of SSH-Agent on Windows
 
 On Windows, there are multiple communication methods for SSH agents, leading to complexity in usage and configuration. The following diagram illustrates the current SSH agent communication landscape on Windows.
-![windows-ssh-agent-chaosmap](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/windows-ssh-agent-chaosmap.png?raw=true)
+![windows-ssh-agent-chaosmap](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/windows-ssh-agent-chaosmap.png?raw=true)
 
 ### OmniSSHAgent Connection Diagram
 
 OmniSSHAgent simplifies this chaotic situation, as shown in the diagram below.
-![OmniSSHAgentmap](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/OmniSSHAgent.png?raw=true)
+![OmniSSHAgentmap](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/OmniSSHAgent.png?raw=true)
 
 ## System Requirements
 
@@ -56,11 +56,11 @@ OmniSSHAgent simplifies this chaotic situation, as shown in the diagram below.
 - Unix domain socket for WSL2
 - NamedPipe on Windows
 - Unix domain socket for WSL1
-- Unix domain socket for MSYS2 (Cygwin) ([#1](https://github.com/robertt-smg/OmniSSHAgent/issues/1))
+- Unix domain socket for MSYS2 (Cygwin) ([#1](https://github.com/cwatanab/OmniSSHAgent/issues/1))
 
 ## Usage
 
-1. Download `OmniSSHAgent-amd64-installer.exe` from [the latest release](https://github.com/robertt-smg/OmniSSHAgent/releases/latest), and run the installer.
+1. Download `OmniSSHAgent-amd64-installer.exe` from [the latest release](https://github.com/cwatanab/OmniSSHAgent/releases/latest), and run the installer.
 2. If you are using the native Windows SSH agent, you will need to stop and disable it. Open PowerShell with administrator privileges and run the following commands:
 
 ```powershell
@@ -95,7 +95,7 @@ Choose the instructions for your preferred shell below. If your shell is not lis
 
 ```bash
 mkdir -p $HOME/wsl2-ssh-agent-proxy
-curl -sL https://raw.githubusercontent.com/robertt-smg/OmniSSHAgent/refs/heads/main/hack/ubuntu.wsl2-ssh-agent-proxy.sh -o $HOME/wsl2-ssh-agent-proxy/ubuntu.wsl2-ssh-agent-proxy.sh
+curl -sL https://raw.githubusercontent.com/cwatanab/OmniSSHAgent/refs/heads/main/hack/ubuntu.wsl2-ssh-agent-proxy.sh -o $HOME/wsl2-ssh-agent-proxy/ubuntu.wsl2-ssh-agent-proxy.sh
 ```
 
 2. Add the following line to `~/.bashrc`, `~/.zshrc`, or the appropriate file for your shell:
@@ -110,7 +110,7 @@ source $HOME/wsl2-ssh-agent-proxy/ubuntu.wsl2-ssh-agent-proxy.sh
 
 ```fish
 mkdir -p $HOME/wsl2-ssh-agent-proxy
-curl -sL https://raw.githubusercontent.com/robertt-smg/OmniSSHAgent/refs/heads/main/hack/ubuntu.wsl2-ssh-agent-proxy.fish -o $HOME/wsl2-ssh-agent-proxy/ubuntu.wsl2-ssh-agent-proxy.fish
+curl -sL https://raw.githubusercontent.com/cwatanab/OmniSSHAgent/refs/heads/main/hack/ubuntu.wsl2-ssh-agent-proxy.fish -o $HOME/wsl2-ssh-agent-proxy/ubuntu.wsl2-ssh-agent-proxy.fish
 ```
 
 2. Add the following line to `~/.config/fish/config.fish`:
@@ -155,7 +155,7 @@ Variable value: /mnt/c/Users/<UserName>/OmniSSHAgent.sock
 ## Using with OpenSSH ssh-agent NamedPipe (also compatible with 1Password) in Proxy Mode
 
 This mode uses the [OpenSSH ssh-agent NamedPipe](https://learn.microsoft.com/windows-server/administration/openssh/openssh_keymanagement) as a backend. It can also be used with [1Password’s ssh-agent function](https://developer.1password.com/docs/ssh/agent/), as shown in the diagram below.  
-![NamedPipe-Proxy-mode](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/NamedPipeProxyMode.png?raw=true)
+![NamedPipe-Proxy-mode](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/NamedPipeProxyMode.png?raw=true)
 
 By enabling **"Proxy mode for OpenSSH agent (also compatible with 1Password)"** in the configuration, OmniSSHAgent functions as a proxy for Windows OpenSSH's NamedPipe SSH agent.  
 This mode also works with the 1Password key-agent.
