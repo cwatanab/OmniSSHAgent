@@ -10,3 +10,5 @@ pkg/muxconn
 pkg/stdioconn
 node_modules/
 frontend/node_modules/
+
+/.serena

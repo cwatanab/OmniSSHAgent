@@ -1,5 +1,30 @@
 # OmniSSHAgent
 
+## What's New (vs original)
+
+| | | |
+|---|---|---|
+| ![Home](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-v2-home.png?raw=true) | ![Add Key](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-v2-add.png?raw=true) | ![Key Detail](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-v2-detail.png?raw=true) |
+| *Welcome* | *Add Key* | *Key Detail* |
+
+| ![Settings](https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-v2-setup.png?raw=true) |
+|---|
+| *Settings* |
+
+This fork features a completely redesigned UI with the following improvements over the [original](https://github.com/masahide/OmniSSHAgent):
+
+- **Sidebar + detail pane layout** — replaces the accordion-based single-pane design
+- **Dark/Light theme** — auto-detects Windows theme setting; manually selectable
+- **Japanese language support** — full JA/EN bilingual UI
+- **Windows accent color** — follows your Windows accent color or choose from 7 presets + custom
+- **Key enable/disable toggle** — double-click a key in the sidebar or use the switch in detail view
+- **Instant settings apply** — no restart needed after saving settings
+- **Debug logging** — toggle debug log and open log directory from the settings screen
+- **Copy buttons** — copy public key or file path to clipboard
+- **Resizable sidebar** — drag to resize (persisted across launches)
+- **App version display** — shown on the welcome screen
+- **Color-coded toast notifications** — green for success, red for errors
+
 ![OmniSSHAgent Fixed](https://github.com/robertt-smg/OmniSSHAgent/blob/main/build/appicon.png?raw=true)
 
 ## About
@@ -160,7 +185,4 @@ Passphrases are stored in the [Windows Credential Manager](https://support.micro
 
 When you quit the app, OmniSSHAgent now cancels every agent listener through a `context.Context`, closes the related sockets, and waits for the goroutines to finish. This prevents the old situation where `Quit` would hang because listeners were still blocking on `Accept`/`GetMessage`.
 
-## Screenshots
 
-<img src="https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen.png?raw=true" width="500">
-<img src="https://github.com/robertt-smg/OmniSSHAgent/blob/main/doc/screen-setup.png?raw=true" width="500">
