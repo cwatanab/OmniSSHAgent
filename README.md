@@ -4,10 +4,10 @@
 
 | | | |
 |---|---|---|
-| ![Home](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/screen-v2-home.png?raw=true) | ![Add Key](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/screen-v2-add.png?raw=true) | ![Key Detail](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/screen-v2-detail.png?raw=true) |
+| ![Home](doc/screen-v2-home.png) | ![Add Key](doc/screen-v2-add.png) | ![Key Detail](doc/screen-v2-detail.png) |
 | *Welcome* | *Add Key* | *Key Detail* |
 
-| ![Settings](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/screen-v2-setup.png?raw=true) |
+| ![Settings](doc/screen-v2-setup.png) |
 |---|
 | *Settings* |
 
@@ -25,7 +25,7 @@ This fork features a completely redesigned UI with the following improvements ov
 - **App version display** — shown on the welcome screen
 - **Color-coded toast notifications** — green for success, red for errors
 
-![OmniSSHAgent Fixed](https://github.com/cwatanab/OmniSSHAgent/blob/main/build/appicon.png?raw=true)
+![OmniSSHAgent Fixed](build/appicon.png)
 
 ## About
 
@@ -38,12 +38,12 @@ I only fixed a dead lock issue ...
 ### The Chaotic State of SSH-Agent on Windows
 
 On Windows, there are multiple communication methods for SSH agents, leading to complexity in usage and configuration. The following diagram illustrates the current SSH agent communication landscape on Windows.
-![windows-ssh-agent-chaosmap](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/windows-ssh-agent-chaosmap.png?raw=true)
+![windows-ssh-agent-chaosmap](doc/windows-ssh-agent-chaosmap.png)
 
 ### OmniSSHAgent Connection Diagram
 
 OmniSSHAgent simplifies this chaotic situation, as shown in the diagram below.
-![OmniSSHAgentmap](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/OmniSSHAgent.png?raw=true)
+![OmniSSHAgentmap](doc/OmniSSHAgent.png)
 
 ## System Requirements
 
@@ -155,7 +155,7 @@ Variable value: /mnt/c/Users/<UserName>/OmniSSHAgent.sock
 ## Using with OpenSSH ssh-agent NamedPipe (also compatible with 1Password) in Proxy Mode
 
 This mode uses the [OpenSSH ssh-agent NamedPipe](https://learn.microsoft.com/windows-server/administration/openssh/openssh_keymanagement) as a backend. It can also be used with [1Password’s ssh-agent function](https://developer.1password.com/docs/ssh/agent/), as shown in the diagram below.  
-![NamedPipe-Proxy-mode](https://github.com/cwatanab/OmniSSHAgent/blob/main/doc/NamedPipeProxyMode.png?raw=true)
+![NamedPipe-Proxy-mode](doc/NamedPipeProxyMode.png)
 
 By enabling **"Proxy mode for OpenSSH agent (also compatible with 1Password)"** in the configuration, OmniSSHAgent functions as a proxy for Windows OpenSSH's NamedPipe SSH agent.  
 This mode also works with the 1Password key-agent.
