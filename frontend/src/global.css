@@ -1,73 +1,142 @@
 :root {
   --primary-color: #0078d4;
+  --primary-on-color: #ffffff;
   --bg-color: #ffffff;
-  --sidebar-bg: #f3f3f3;
-  --text-color: #323130;
-  --text-secondary: #605e5c;
-  --border-color: #edebe9;
-  --hover-bg: #eaeaea;
-  --active-bg: #dedede;
-  --delete-red: #d32f2f;
+  --surface-color: #ffffff;
+  --surface-muted-color: #f5f5f5;
+  --sidebar-bg: var(--surface-muted-color);
+  --text-color: #1f1f1f;
+  --text-secondary: #5f5f5f;
+  --border-color: #e5e5e5;
+  --hover-bg: #f0f0f0;
+  --active-bg: color-mix(in srgb, var(--primary-color) 12%, #ffffff);
+  --delete-red: #c50f1f;
   /* Widen toast alerts globally to prevent text wrapping */
   --toastWidth: 26rem;
   /* SMUI / Material theme wired to Windows accent color */
   --mdc-theme-primary: var(--primary-color);
-  --mdc-theme-on-primary: #ffffff;
+  --mdc-theme-on-primary: var(--primary-on-color);
+  --mdc-theme-secondary: var(--primary-color);
+  --mdc-theme-surface: var(--surface-color);
+  --mdc-theme-background: var(--bg-color);
+  --mdc-theme-on-surface: var(--text-color);
+  --mdc-theme-error: var(--delete-red);
+  --mdc-theme-on-error: #ffffff;
   --mdc-text-field-ink-color: var(--text-color);
   --mdc-text-field-outlined-idle-border-color: var(--border-color);
   --mdc-text-field-outlined-hover-border-color: var(--primary-color);
+  --mdc-text-button-label-text-color: var(--primary-color);
+  --mdc-outlined-button-label-text-color: var(--primary-color);
+  --mdc-outlined-button-outline-color: var(--border-color);
+  --mdc-switch-selected-track-color: color-mix(
+    in srgb,
+    var(--primary-color) 42%,
+    var(--surface-color)
+  );
+  --mdc-switch-selected-handle-color: var(--primary-color);
+  --mdc-switch-selected-hover-track-color: color-mix(
+    in srgb,
+    var(--primary-color) 50%,
+    var(--surface-color)
+  );
+  --mdc-switch-selected-focus-track-color: color-mix(
+    in srgb,
+    var(--primary-color) 50%,
+    var(--surface-color)
+  );
+  --mdc-switch-selected-pressed-track-color: color-mix(
+    in srgb,
+    var(--primary-color) 54%,
+    var(--surface-color)
+  );
+  --mdc-switch-selected-hover-handle-color: var(--primary-color);
+  --mdc-switch-selected-focus-handle-color: var(--primary-color);
+  --mdc-switch-selected-pressed-handle-color: var(--primary-color);
+  --mdc-switch-unselected-track-color: #c8c6c4;
+  --mdc-switch-unselected-handle-color: #ffffff;
+  --mdc-switch-unselected-hover-track-color: #b8b5b2;
+  --mdc-switch-unselected-hover-handle-color: #ffffff;
+  --mdc-switch-unselected-focus-handle-color: #ffffff;
 }
 
 :root.light-theme {
+  --primary-color: #0078d4;
+  --primary-on-color: #ffffff;
   --bg-color: #ffffff;
-  --sidebar-bg: #f3f3f3;
-  --text-color: #323130;
-  --text-secondary: #605e5c;
-  --border-color: #edebe9;
-  --hover-bg: #eaeaea;
-  --active-bg: #dedede;
-  --delete-red: #d32f2f;
-  --toastWidth: 26rem;
-  --mdc-theme-primary: var(--primary-color);
-  --mdc-theme-on-primary: #ffffff;
+  --surface-color: #ffffff;
+  --surface-muted-color: #f5f5f5;
+  --sidebar-bg: var(--surface-muted-color);
+  --text-color: #1f1f1f;
+  --text-secondary: #5f5f5f;
+  --border-color: #e5e5e5;
+  --hover-bg: #f0f0f0;
+  --active-bg: color-mix(in srgb, var(--primary-color) 12%, #ffffff);
+  --delete-red: #c50f1f;
+  --mdc-theme-on-error: #ffffff;
+  --mdc-switch-unselected-track-color: #c8c6c4;
+  --mdc-switch-unselected-handle-color: #ffffff;
+  --mdc-switch-unselected-hover-track-color: #b8b5b2;
+  --mdc-switch-unselected-hover-handle-color: #ffffff;
+  --mdc-switch-unselected-focus-handle-color: #ffffff;
 }
 
 :root.dark-theme {
-  --bg-color: #202020;
-  --sidebar-bg: #2d2d2d;
-  --text-color: #ffffff;
-  --text-secondary: #a19f9d;
-  --border-color: #333333;
-  --hover-bg: #3c3c3c;
-  --active-bg: #4a4a4a;
+  --primary-color: #60cdff;
+  --primary-on-color: #000000;
+  --bg-color: #1f1f1f;
+  --surface-color: #242424;
+  --surface-muted-color: #2b2b2b;
+  --sidebar-bg: #252525;
+  --text-color: #f5f5f5;
+  --text-secondary: #c7c7c7;
+  --border-color: #3d3d3d;
+  --hover-bg: #303030;
+  --active-bg: color-mix(in srgb, var(--primary-color) 22%, #1f1f1f);
   --delete-red: #ff6b6b;
-  --toastWidth: 26rem;
-  --mdc-theme-primary: var(--primary-color);
-  --mdc-theme-on-primary: #ffffff;
+  --mdc-theme-on-error: #000000;
+  --mdc-switch-unselected-track-color: #5f5f5f;
+  --mdc-switch-unselected-handle-color: #c8c8c8;
+  --mdc-switch-unselected-hover-track-color: #707070;
+  --mdc-switch-unselected-hover-handle-color: #dedede;
+  --mdc-switch-unselected-focus-handle-color: #dedede;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light-theme) {
     --primary-color: #60cdff;
-    --bg-color: #202020;
-    --sidebar-bg: #2d2d2d;
-    --text-color: #ffffff;
-    --text-secondary: #a19f9d;
-    --border-color: #333333;
-    --hover-bg: #3c3c3c;
-    --active-bg: #4a4a4a;
+    --primary-on-color: #000000;
+    --bg-color: #1f1f1f;
+    --surface-color: #242424;
+    --surface-muted-color: #2b2b2b;
+    --sidebar-bg: #252525;
+    --text-color: #f5f5f5;
+    --text-secondary: #c7c7c7;
+    --border-color: #3d3d3d;
+    --hover-bg: #303030;
+    --active-bg: color-mix(in srgb, var(--primary-color) 22%, #1f1f1f);
     --delete-red: #ff6b6b;
-    --toastWidth: 26rem;
-    --mdc-theme-primary: var(--primary-color);
-    --mdc-theme-on-primary: #000000;
+    --mdc-theme-on-error: #000000;
+    --mdc-switch-unselected-track-color: #5f5f5f;
+    --mdc-switch-unselected-handle-color: #c8c8c8;
+    --mdc-switch-unselected-hover-track-color: #707070;
+    --mdc-switch-unselected-hover-handle-color: #dedede;
+    --mdc-switch-unselected-focus-handle-color: #dedede;
   }
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    "Segoe UI",
+    -apple-system,
+    BlinkMacSystemFont,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   overflow: hidden;
@@ -379,7 +448,11 @@ html, body {
 .detail-actions .delete-btn:hover,
 .detail-actions button:hover {
   opacity: 1;
-  background-color: color-mix(in srgb, var(--delete-red) 10%, transparent) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--delete-red) 10%,
+    transparent
+  ) !important;
   border-color: var(--delete-red) !important;
 }
 

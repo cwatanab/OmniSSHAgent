@@ -30,8 +30,8 @@
 
   const startResize = (event) => {
     isResizing = true;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
     window.addEventListener("mousemove", resize);
     window.addEventListener("mouseup", stopResize);
   };
@@ -46,8 +46,8 @@
 
   const stopResize = () => {
     isResizing = false;
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
     window.removeEventListener("mousemove", resize);
     window.removeEventListener("mouseup", stopResize);
     localStorage.setItem(STORAGE_KEY_SIDEBAR_WIDTH, sidebarWidth.toString());
@@ -55,11 +55,58 @@
 
   const STORAGE_KEY_LANG = "omni-settings-lang";
   const STORAGE_KEY_THEME = "omni-settings-theme";
+  const STORAGE_KEY_ACCENT = "omni-settings-accent";
+
+  const accentColorsMap = {
+    blue: { light: "#0078d4", dark: "#60cdff" },
+    indigo: { light: "#4f46e5", dark: "#a78bfa" },
+    teal: { light: "#0f766e", dark: "#2dd4bf" },
+    emerald: { light: "#047857", dark: "#34d399" },
+    sunset: { light: "#c2410c", dark: "#fb923c" },
+    rose: { light: "#be123c", dark: "#fb7185" },
+  };
+
+  const normalizeHexColor = (color) => {
+    const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec((color || "").trim());
+    if (!match) return null;
+    const hex =
+      match[1].length === 3
+        ? match[1]
+            .split("")
+            .map((part) => part + part)
+            .join("")
+        : match[1];
+    return `#${hex.toLowerCase()}`;
+  };
+
+  const getRelativeLuminance = (hexColor) => {
+    const hex = hexColor.slice(1);
+    const channels = [0, 2, 4].map((start) =>
+      parseInt(hex.slice(start, start + 2), 16),
+    );
+    const [r, g, b] = channels.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.03928
+        ? value / 12.92
+        : Math.pow((value + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+
+  const getReadableTextColor = (backgroundColor) => {
+    const luminance = getRelativeLuminance(backgroundColor);
+    const whiteContrast = 1.05 / (luminance + 0.05);
+    const blackContrast = (luminance + 0.05) / 0.05;
+    return whiteContrast >= blackContrast ? "#ffffff" : "#000000";
+  };
 
   const storedLang = localStorage.getItem(STORAGE_KEY_LANG);
-  let lang = storedLang && storedLang !== "auto"
-    ? storedLang
-    : (navigator.language.startsWith("ja") ? "ja" : "en");
+  let lang =
+    storedLang && storedLang !== "auto"
+      ? storedLang
+      : navigator.language.startsWith("ja")
+        ? "ja"
+        : "en";
 
   const t = {
     en: {
@@ -71,7 +118,8 @@
       addPrivateKey: "Add Private Key",
       settings: "Settings",
       welcomeTitle: "Welcome to Omni SSH Agent",
-      welcomeDesc: "Select a key from the sidebar to view details, or add a new key to get started.",
+      welcomeDesc:
+        "Select a key from the sidebar to view details, or add a new key to get started.",
       filePath: "File Path of the Private Key",
       keyType: "SSH Key Type",
       fingerprintSha256: "Fingerprint SHA256",
@@ -89,7 +137,7 @@
       disableKey: "Key disabled",
       toggleFail: "Failed to toggle key",
       keyEnabledLabel: "Key is enabled",
-      keyDisabledLabel: "Key is disabled"
+      keyDisabledLabel: "Key is disabled",
     },
     ja: {
       appTitle: "Omni SSH Agent",
@@ -100,7 +148,8 @@
       addPrivateKey: "秘密鍵の追加",
       settings: "設定",
       welcomeTitle: "Omni SSH Agent へようこそ",
-      welcomeDesc: "サイドバーから鍵を選択して詳細を表示するか、新しい鍵を追加してください。",
+      welcomeDesc:
+        "サイドバーから鍵を選択して詳細を表示するか、新しい鍵を追加してください。",
       filePath: "秘密鍵のファイルパス",
       keyType: "SSH鍵の種類",
       fingerprintSha256: "フィンガープリント SHA256",
@@ -118,8 +167,8 @@
       disableKey: "鍵を無効にしました",
       toggleFail: "鍵の切り替えに失敗しました",
       keyEnabledLabel: "鍵は有効です",
-      keyDisabledLabel: "鍵は無効です"
-    }
+      keyDisabledLabel: "鍵は無効です",
+    },
   };
 
   let keys = [];
@@ -144,13 +193,18 @@
   };
 
   const isFileDrag = (e) => {
-    return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+    return (
+      e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files")
+    );
   };
 
   const addLocalFilePath = async (filePath) => {
     if (!filePath) return;
     try {
-      const privateKeyFile = await window.go.main.App.CheckKeyType(filePath, "");
+      const privateKeyFile = await window.go.main.App.CheckKeyType(
+        filePath,
+        "",
+      );
       if (privateKeyFile.encryption) {
         addFileDialog.show(filePath);
         return;
@@ -188,56 +242,83 @@
     }, true);
   });
 
-  const applyWindowsTheme = async () => {
-    const accentColorsMap = {
-      blue: "#0078d4",
-      indigo: "#6366f1",
-      teal: "#0d9488",
-      emerald: "#10b981",
-      sunset: "#f97316",
-      rose: "#f43f5e",
-    };
+  const updateSmuiThemeStylesheet = (isLight) => {
+    const lightTheme =
+      document.getElementById("smui-theme-light") ||
+      document.querySelector('link[href="/smui.css"]');
+    const darkTheme =
+      document.getElementById("smui-theme-dark") ||
+      document.querySelector('link[href="/smui-dark.css"]');
+    if (!lightTheme || !darkTheme) return;
 
-    let color = null;
-    const storedAccent = localStorage.getItem("omni-settings-accent");
-    if (storedAccent && storedAccent !== "default") {
-      color = accentColorsMap[storedAccent] || storedAccent;
-    } else {
-      try {
-        color = await window.go.main.App.GetAccentColor();
-      } catch (e) {
-        console.error("Failed to load Windows accent color:", e);
-      }
-    }
+    lightTheme.media = isLight ? "all" : "not all";
+    darkTheme.media = isLight ? "not all" : "all";
+  };
 
-    if (color) {
-      const root = document.documentElement;
-      root.style.setProperty("--primary-color", color);
-      root.style.setProperty("--mdc-theme-primary", color);
-      root.style.setProperty("--mdc-theme-on-primary", "#ffffff");
-    }
+  const applyThemeClass = (isLight) => {
+    const root = document.documentElement;
+    root.classList.toggle("light-theme", isLight);
+    root.classList.toggle("dark-theme", !isLight);
+    updateSmuiThemeStylesheet(isLight);
+  };
 
+  const resolveThemePreference = async () => {
     const storedTheme = localStorage.getItem(STORAGE_KEY_THEME);
-    let isLight;
     if (storedTheme === "light") {
-      isLight = true;
+      return true;
     } else if (storedTheme === "dark") {
-      isLight = false;
-    } else {
-      try {
-        isLight = await window.go.main.App.GetAppsUseLightTheme();
-      } catch (e) {
-        console.error("Failed to load Windows theme preference:", e);
-        isLight = false;
-      }
+      return false;
     }
-    if (isLight) {
-      document.documentElement.classList.add("light-theme");
-      document.documentElement.classList.remove("dark-theme");
-    } else {
-      document.documentElement.classList.add("dark-theme");
-      document.documentElement.classList.remove("light-theme");
+
+    try {
+      return await window.go.main.App.GetAppsUseLightTheme();
+    } catch (e) {
+      console.error("Failed to load Windows theme preference:", e);
+      return !window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
+  };
+
+  const resolveAccentColor = async (isLight) => {
+    const storedAccent = localStorage.getItem(STORAGE_KEY_ACCENT);
+    const preset = accentColorsMap[storedAccent];
+    if (preset) {
+      return preset[isLight ? "light" : "dark"];
+    }
+    if (storedAccent && storedAccent !== "default") {
+      return storedAccent;
+    }
+
+    try {
+      return await window.go.main.App.GetAccentColor();
+    } catch (e) {
+      console.error("Failed to load Windows accent color:", e);
+      return null;
+    }
+  };
+
+  const applyAccentColor = (color) => {
+    const root = document.documentElement;
+    root.style.removeProperty("--primary-color");
+    root.style.removeProperty("--primary-on-color");
+    root.style.removeProperty("--mdc-theme-primary");
+    root.style.removeProperty("--mdc-theme-on-primary");
+
+    const normalizedColor = normalizeHexColor(color);
+    if (!normalizedColor) return;
+
+    root.style.setProperty("--primary-color", normalizedColor);
+    root.style.setProperty(
+      "--primary-on-color",
+      getReadableTextColor(normalizedColor),
+    );
+  };
+
+  const applyWindowsTheme = async () => {
+    const isLight = await resolveThemePreference();
+    applyThemeClass(isLight);
+
+    const color = await resolveAccentColor(isLight);
+    applyAccentColor(color);
   };
 
   const syncAppState = async () => {
@@ -291,9 +372,12 @@
     await loadSettings();
     await loadKeys();
     const storedLang = localStorage.getItem(STORAGE_KEY_LANG);
-    lang = storedLang && storedLang !== "auto"
-      ? storedLang
-      : (navigator.language.startsWith("ja") ? "ja" : "en");
+    lang =
+      storedLang && storedLang !== "auto"
+        ? storedLang
+        : navigator.language.startsWith("ja")
+          ? "ja"
+          : "en";
     await applyWindowsTheme();
     activeView = "welcome";
   };
@@ -346,12 +430,20 @@
     togglingKey = key.publickey.sha256;
     try {
       await window.go.main.App.ToggleKey(key.publickey.sha256);
-      const idx = keys.findIndex(k => k.publickey.sha256 === key.publickey.sha256);
+      const idx = keys.findIndex(
+        (k) => k.publickey.sha256 === key.publickey.sha256,
+      );
       if (idx !== -1) {
         keys[idx].disabled = !keys[idx].disabled;
-        toast.push(keys[idx].disabled ? t[lang].disableKey : t[lang].enableKey, green);
+        toast.push(
+          keys[idx].disabled ? t[lang].disableKey : t[lang].enableKey,
+          green,
+        );
         keys = keys;
-        if (selectedKey && selectedKey.publickey.sha256 === key.publickey.sha256) {
+        if (
+          selectedKey &&
+          selectedKey.publickey.sha256 === key.publickey.sha256
+        ) {
           selectedKey.disabled = keys[idx].disabled;
           selectedKey = selectedKey;
         }
@@ -364,7 +456,8 @@
   };
 
   const copyText = (text) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard
+      .writeText(text)
       .then(() => {
         toast.push(t[lang].copied, green);
       })
@@ -382,7 +475,12 @@
   window.runtime.EventsOn("LoadKeysEvent", onLoadKeysEvent);
 
   const handleKeydown = (e) => {
-    if (e.key === "Delete" && selectedKey && activeView === "detail" && !settingsData.ProxyModeOfNamedPipe) {
+    if (
+      e.key === "Delete" &&
+      selectedKey &&
+      activeView === "detail" &&
+      !settingsData.ProxyModeOfNamedPipe
+    ) {
       delKey(selectedKey.publickey.sha256);
     }
   };
@@ -421,9 +519,20 @@
   };
 </script>
 
-<main class="app-container" class:drag-over={dragOver} on:dragenter={handleDragEnter} on:dragover={handleDragOver} on:dragleave={handleDragLeave} on:drop={handleDrop}>
+<main
+  class="app-container"
+  class:drag-over={dragOver}
+  on:dragenter={handleDragEnter}
+  on:dragover={handleDragOver}
+  on:dragleave={handleDragLeave}
+  on:drop={handleDrop}
+>
   <!-- Left Panel: Sidebar -->
-  <aside class="sidebar" style="width: {sidebarWidth}px; min-width: {sidebarWidth}px; max-width: {sidebarWidth}px;" data-wails-no-drag>
+  <aside
+    class="sidebar"
+    style="width: {sidebarWidth}px; min-width: {sidebarWidth}px; max-width: {sidebarWidth}px;"
+    data-wails-no-drag
+  >
     <!-- Keys list -->
     <div class="sidebar-content">
       <div class="keys-section-title">{t[lang].keysTitle}</div>
@@ -432,13 +541,22 @@
       {:else}
         <ul class="keys-list">
           {#each keys as key}
-            <li class="key-item {selectedKey && selectedKey.publickey.sha256 === key.publickey.sha256 ? 'active' : ''} {key.disabled ? 'disabled' : ''}"
-                on:click={() => selectKey(key)}
-                on:dblclick={() => { if (!settingsData.ProxyModeOfNamedPipe) toggleKey(key); }}>
+            <li
+              class="key-item {selectedKey &&
+              selectedKey.publickey.sha256 === key.publickey.sha256
+                ? 'active'
+                : ''} {key.disabled ? 'disabled' : ''}"
+              on:click={() => selectKey(key)}
+              on:dblclick={() => {
+                if (!settingsData.ProxyModeOfNamedPipe) toggleKey(key);
+              }}
+            >
               <span class="material-icons key-icon">key</span>
               <div class="key-info">
                 <span class="key-name">{key.name || t[lang].unnamedKey}</span>
-                <span class="key-type">{key.publickey.type || t[lang].unknownType}</span>
+                <span class="key-type"
+                  >{key.publickey.type || t[lang].unknownType}</span
+                >
               </div>
             </li>
           {/each}
@@ -449,12 +567,20 @@
     <!-- Sidebar footer action buttons -->
     <div class="sidebar-footer">
       {#if !settingsData.ProxyModeOfNamedPipe}
-        <Button class="action-btn add-btn" variant="raised" on:click={() => addFileDialog.show()}>
+        <Button
+          class="action-btn add-btn"
+          variant="raised"
+          on:click={() => addFileDialog.show()}
+        >
           <span class="material-icons">add</span>
           <Label>{t[lang].addPrivateKey}</Label>
         </Button>
       {/if}
-      <Button class="action-btn settings-btn" variant="outlined" on:click={openSettings}>
+      <Button
+        class="action-btn settings-btn"
+        variant="outlined"
+        on:click={openSettings}
+      >
         <span class="material-icons">settings</span>
         <Label>{t[lang].settings}</Label>
       </Button>
@@ -462,11 +588,14 @@
   </aside>
 
   <!-- Resizer Handle -->
-  <div class="sidebar-resizer {isResizing ? 'resizing' : ''}" on:mousedown={startResize}></div>
+  <div
+    class="sidebar-resizer {isResizing ? 'resizing' : ''}"
+    on:mousedown={startResize}
+  ></div>
 
   <!-- Right Panel: Main Content Area -->
   <section class="main-content" data-wails-no-drag>
-    {#if activeView === 'welcome'}
+    {#if activeView === "welcome"}
       <div class="welcome-view">
         <span class="material-icons welcome-icon">security</span>
         <h2>{t[lang].welcomeTitle}</h2>
@@ -475,7 +604,7 @@
           <div class="welcome-version">v{appVersion}</div>
         {/if}
       </div>
-    {:else if activeView === 'detail' && selectedKey}
+    {:else if activeView === "detail" && selectedKey}
       <div class="detail-view">
         <div class="detail-header">
           {#if !settingsData.ProxyModeOfNamedPipe}
@@ -487,30 +616,49 @@
           {/if}
           <h2>{selectedKey.name || t[lang].unnamedKey}</h2>
         </div>
-        
-        <div class="detail-fields">
 
+        <div class="detail-fields">
           <div class="field-group">
             <span class="field-label">{t[lang].filePath}</span>
             <div class="field-with-action">
-              <Textfield disabled style="flex: 1;" value={selectedKey.filePath} />
-              <Button variant="outlined" on:click={() => copyText(selectedKey.filePath)}>{t[lang].copy}</Button>
+              <Textfield
+                disabled
+                style="flex: 1;"
+                value={selectedKey.filePath}
+              />
+              <Button
+                variant="outlined"
+                on:click={() => copyText(selectedKey.filePath)}
+                >{t[lang].copy}</Button
+              >
             </div>
           </div>
 
           <div class="field-group">
             <span class="field-label">{t[lang].keyType}</span>
-            <Textfield disabled style="width: 100%;" value={selectedKey.publickey.type} />
+            <Textfield
+              disabled
+              style="width: 100%;"
+              value={selectedKey.publickey.type}
+            />
           </div>
 
           <div class="field-group">
             <span class="field-label">{t[lang].fingerprintSha256}</span>
-            <Textfield disabled style="width: 100%;" value={selectedKey.publickey.sha256} />
+            <Textfield
+              disabled
+              style="width: 100%;"
+              value={selectedKey.publickey.sha256}
+            />
           </div>
 
           <div class="field-group">
             <span class="field-label">{t[lang].fingerprintMd5}</span>
-            <Textfield disabled style="width: 100%;" value={selectedKey.publickey.md5} />
+            <Textfield
+              disabled
+              style="width: 100%;"
+              value={selectedKey.publickey.md5}
+            />
           </div>
 
           <div class="field-group">
@@ -519,33 +667,54 @@
               <Paper variant="outlined" class="publickey-box">
                 <Content>{selectedKey.publickey.string}</Content>
               </Paper>
-              <Button variant="outlined" on:click={() => copyText(selectedKey.publickey.string)}>{t[lang].copyKey}</Button>
+              <Button
+                variant="outlined"
+                on:click={() => copyText(selectedKey.publickey.string)}
+                >{t[lang].copyKey}</Button
+              >
             </div>
           </div>
         </div>
 
         {#if !settingsData.ProxyModeOfNamedPipe}
           <div class="detail-actions">
-            <Button class="delete-btn" variant="outlined" on:click={() => delKey(selectedKey.publickey.sha256)}>
+            <Button
+              class="delete-btn"
+              variant="outlined"
+              on:click={() => delKey(selectedKey.publickey.sha256)}
+            >
               <span class="material-icons">delete</span>
               <Label>{t[lang].deleteKey}</Label>
             </Button>
           </div>
         {/if}
       </div>
-    {:else if activeView === 'settings'}
-      <Settings lang={lang} on:save={handleSettingsSave} on:cancel={handleSettingsCancel} />
+    {:else if activeView === "settings"}
+      <Settings
+        {lang}
+        on:save={handleSettingsSave}
+        on:cancel={handleSettingsCancel}
+      />
     {/if}
   </section>
 
   <!-- Dialogs & Toasts -->
-  <AddFileDialog lang={lang} bind:this={addFileDialog} on:eventAddPkfile={handleData} />
+  <AddFileDialog
+    {lang}
+    bind:this={addFileDialog}
+    on:eventAddPkfile={handleData}
+  />
   <SvelteToast />
 
   <Dialog bind:open={deleteDialogOpen} scrimClickAction="" escapeKeyAction="">
     <Title>{t[lang].confirmDelete}</Title>
     <Actions>
-      <Button on:click={() => { deleteDialogOpen = false; deleteTargetSha256 = ""; }}>
+      <Button
+        on:click={() => {
+          deleteDialogOpen = false;
+          deleteTargetSha256 = "";
+        }}
+      >
         <Label>No</Label>
       </Button>
       <Button on:click={confirmDelKey}>

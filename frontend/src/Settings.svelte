@@ -25,8 +25,10 @@
       settingsUnixHelper: "Set the path of Unix domain socket file",
       settingsCygwin: "Enable Cygwin unix domain socket agent",
       settingsCygwinPath: "Cygwin Unix domain socket file path (MSYS2):",
-      settingsCygwinHelper: "Set the path of Cygwin(MSYS2) Unix domain socket file",
-      settingsProxy: "Enable proxy mode for OpenSSH agent (also compatible with 1Password)",
+      settingsCygwinHelper:
+        "Set the path of Cygwin(MSYS2) Unix domain socket file",
+      settingsProxy:
+        "Enable proxy mode for OpenSSH agent (also compatible with 1Password)",
       settingsLanguage: "Language",
       settingsLanguageAuto: "Auto",
       settingsLanguageJa: "Japanese",
@@ -48,7 +50,7 @@
       settingsCancel: "Cancel",
       settingsSaved: "Saved the settings",
       sectionGeneral: "General Settings",
-      sectionAgent: "SSH Agent Settings"
+      sectionAgent: "SSH Agent Settings",
     },
     ja: {
       settingsTitle: "設定",
@@ -63,8 +65,10 @@
       settingsUnixHelper: "Unix ドメインソケットファイルのパスを指定します",
       settingsCygwin: "Cygwin Unix ドメインソケットエージェントを有効にする",
       settingsCygwinPath: "Cygwin Unix ドメインソケットファイルパス (MSYS2):",
-      settingsCygwinHelper: "Cygwin(MSYS2) Unix ドメインソケットファイルのパスを指定します",
-      settingsProxy: "OpenSSH エージェントのプロキシモードを有効にする (1Password 互換)",
+      settingsCygwinHelper:
+        "Cygwin(MSYS2) Unix ドメインソケットファイルのパスを指定します",
+      settingsProxy:
+        "OpenSSH エージェントのプロキシモードを有効にする (1Password 互換)",
       settingsLanguage: "言語",
       settingsLanguageAuto: "自動",
       settingsLanguageJa: "日本語",
@@ -86,8 +90,8 @@
       settingsCancel: "キャンセル",
       settingsSaved: "設定を保存しました",
       sectionGeneral: "一般設定",
-      sectionAgent: "SSHエージェント設定"
-    }
+      sectionAgent: "SSHエージェント設定",
+    },
   };
 
   const dispatch = createEventDispatcher();
@@ -121,26 +125,31 @@
 
   const STORAGE_KEY_LANG = "omni-settings-lang";
   const STORAGE_KEY_THEME = "omni-settings-theme";
+  const STORAGE_KEY_ACCENT = "omni-settings-accent";
   let uiLang = "auto";
   let uiTheme = "auto";
 
   const accentColorsMap = {
-    blue: "#0078d4",
-    indigo: "#6366f1",
-    teal: "#0d9488",
-    emerald: "#10b981",
-    sunset: "#f97316",
-    rose: "#f43f5e",
+    blue: { light: "#0078d4", dark: "#60cdff" },
+    indigo: { light: "#4f46e5", dark: "#a78bfa" },
+    teal: { light: "#0f766e", dark: "#2dd4bf" },
+    emerald: { light: "#047857", dark: "#34d399" },
+    sunset: { light: "#c2410c", dark: "#fb923c" },
+    rose: { light: "#be123c", dark: "#fb7185" },
   };
 
   let windowsAccentColor = "#0078d4";
   let customAccentColor = "#0078d4";
   let uiAccent = "default";
+  let systemThemeIsLight = true;
+
+  $: accentPalette =
+    uiTheme === "auto" ? (systemThemeIsLight ? "light" : "dark") : uiTheme;
 
   $: effectiveAccentColor = (() => {
     if (uiAccent === "default") return windowsAccentColor;
     if (uiAccent === "custom") return customAccentColor;
-    return accentColorsMap[uiAccent] || windowsAccentColor;
+    return accentColorsMap[uiAccent]?.[accentPalette] || windowsAccentColor;
   })();
 
   onMount(async () => {
@@ -163,7 +172,15 @@
       console.error("Failed to load Windows accent color:", e);
     }
 
-    const storedAccent = localStorage.getItem("omni-settings-accent");
+    try {
+      systemThemeIsLight = await window.go.main.App.GetAppsUseLightTheme();
+    } catch (e) {
+      console.error("Failed to load Windows theme preference:", e);
+      systemThemeIsLight = !window.matchMedia("(prefers-color-scheme: dark)")
+        .matches;
+    }
+
+    const storedAccent = localStorage.getItem(STORAGE_KEY_ACCENT);
     if (storedAccent) {
       if (accentColorsMap[storedAccent]) {
         uiAccent = storedAccent;
@@ -186,7 +203,7 @@
       if (uiAccent === "custom") {
         accentToStore = customAccentColor;
       }
-      localStorage.setItem("omni-settings-accent", accentToStore);
+      localStorage.setItem(STORAGE_KEY_ACCENT, accentToStore);
 
       toast.push(t[lang].settingsSaved, green);
       dispatch("save");
@@ -236,8 +253,14 @@
         <div class="settings-list">
           <div class="settings-item settings-select-item">
             <span class="material-icons setting-icon">language</span>
-            <label class="settings-select-label" for="lang-select">{t[lang].settingsLanguage}</label>
-            <select id="lang-select" class="settings-select" bind:value={uiLang}>
+            <label class="settings-select-label" for="lang-select"
+              >{t[lang].settingsLanguage}</label
+            >
+            <select
+              id="lang-select"
+              class="settings-select"
+              bind:value={uiLang}
+            >
               <option value="auto">{t[lang].settingsLanguageAuto}</option>
               <option value="ja">{t[lang].settingsLanguageJa}</option>
               <option value="en">{t[lang].settingsLanguageEn}</option>
@@ -246,8 +269,14 @@
 
           <div class="settings-item settings-select-item">
             <span class="material-icons setting-icon">dark_mode</span>
-            <label class="settings-select-label" for="theme-select">{t[lang].settingsTheme}</label>
-            <select id="theme-select" class="settings-select" bind:value={uiTheme}>
+            <label class="settings-select-label" for="theme-select"
+              >{t[lang].settingsTheme}</label
+            >
+            <select
+              id="theme-select"
+              class="settings-select"
+              bind:value={uiTheme}
+            >
               <option value="auto">{t[lang].settingsThemeAuto}</option>
               <option value="dark">{t[lang].settingsThemeDark}</option>
               <option value="light">{t[lang].settingsThemeLight}</option>
@@ -256,9 +285,15 @@
 
           <div class="settings-item settings-select-item">
             <span class="material-icons setting-icon">palette</span>
-            <label class="settings-select-label" for="accent-select">{t[lang].settingsAccent}</label>
+            <label class="settings-select-label" for="accent-select"
+              >{t[lang].settingsAccent}</label
+            >
             <div class="accent-picker-container">
-              <select id="accent-select" class="settings-select" bind:value={uiAccent}>
+              <select
+                id="accent-select"
+                class="settings-select"
+                bind:value={uiAccent}
+              >
                 <option value="default">{t[lang].settingsAccentDefault}</option>
                 <option value="blue">{t[lang].settingsAccentBlue}</option>
                 <option value="indigo">{t[lang].settingsAccentIndigo}</option>
@@ -268,10 +303,17 @@
                 <option value="rose">{t[lang].settingsAccentRose}</option>
                 <option value="custom">{t[lang].settingsAccentCustom}</option>
               </select>
-              {#if uiAccent === 'custom'}
-                <input type="color" class="accent-color-picker" bind:value={customAccentColor} />
+              {#if uiAccent === "custom"}
+                <input
+                  type="color"
+                  class="accent-color-picker"
+                  bind:value={customAccentColor}
+                />
               {/if}
-              <span class="accent-preview-dot" style="background-color: {effectiveAccentColor};"></span>
+              <span
+                class="accent-preview-dot"
+                style="background-color: {effectiveAccentColor};"
+              ></span>
             </div>
           </div>
 
@@ -296,9 +338,14 @@
             </FormField>
           </div>
 
-          <div class="settings-item settings-log-item" style="padding-left: 52px; margin-top: 4px; margin-bottom: 8px;">
+          <div
+            class="settings-item settings-log-item"
+            style="padding-left: 52px; margin-top: 4px; margin-bottom: 8px;"
+          >
             <Button variant="outlined" on:click={openLogDir}>
-              <span class="material-icons" style="margin-right: 6px;">folder_open</span>
+              <span class="material-icons" style="margin-right: 6px;"
+                >folder_open</span
+              >
               <Label>{t[lang].settingsOpenLogDir}</Label>
             </Button>
           </div>
@@ -351,7 +398,9 @@
                 style="width: 100%;"
                 helperLine$style="width: 100%;"
               >
-                <HelperText slot="helper">{t[lang].settingsUnixHelper}</HelperText>
+                <HelperText slot="helper"
+                  >{t[lang].settingsUnixHelper}</HelperText
+                >
               </Textfield>
             </div>
           {/if}
@@ -369,7 +418,9 @@
                 style="width: 100%;"
                 helperLine$style="width: 100%;"
               >
-                <HelperText slot="helper">{t[lang].settingsCygwinHelper}</HelperText>
+                <HelperText slot="helper"
+                  >{t[lang].settingsCygwinHelper}</HelperText
+                >
               </Textfield>
             </div>
           {/if}
