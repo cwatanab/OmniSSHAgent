@@ -17,7 +17,7 @@ type PrivateKeyFile struct {
 	FileType   string    `json:"fileType"`
 	StoreType  string    `json:"storeType"`
 	Encryption bool      `json:"encryption"`
-	Passphrase string    `json:"passphrase"`
+	Passphrase string    `json:"passphrase,omitempty"`
 	PublicKey  PublicKey `json:"publickey"`
 	Disabled   bool      `json:"disabled"`
 }

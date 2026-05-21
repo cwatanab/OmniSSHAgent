@@ -391,20 +391,33 @@ func (a *App) setDebugLogEnabled(enabled bool) {
 
 // OpenLogDir opens the directory containing the log file in Windows Explorer
 func (a *App) OpenLogDir() {
-	if Logger != nil {
-		dir := ""
-		if Logger.FilePath != "" {
-			dir = filepath.Dir(Logger.FilePath)
-		} else {
-			confDir, err := os.UserConfigDir()
-			if err == nil {
-				dir = filepath.Join(confDir, AppName, "logs")
-			}
-		}
-		if dir != "" {
-			_ = os.MkdirAll(dir, 0755)
-			winopen.Open(dir)
-		}
+	confDir, err := os.UserConfigDir()
+	if err != nil {
+		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error",
+			Message: fmt.Sprintf("Failed to locate config directory: %v", err),
+		})
+		return
+	}
+	dir := filepath.Join(confDir, AppName, "logs")
+	if Logger != nil && Logger.FilePath != "" {
+		dir = filepath.Dir(Logger.FilePath)
+	}
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error",
+			Message: fmt.Sprintf("Failed to create log directory: %v", err),
+		})
+		return
+	}
+	if err := winopen.Open(dir); err != nil {
+		runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Error",
+			Message: fmt.Sprintf("Failed to open directory: %v", err),
+		})
 	}
 }
 
@@ -423,18 +436,6 @@ func (a *App) AddLocalFile(pk sshkey.PrivateKeyFile) error {
 }
 
 func (a *App) DeleteKey(sha256 string) error {
-	c, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-		Type:    runtime.QuestionDialog,
-		Title:   "Delete?",
-		Message: "Do you really want to delete this key?",
-	})
-	if err != nil {
-		return err
-	}
-	//runtime.LogDebug(a.ctx, c)
-	if c != "Yes" {
-		return errors.New("cancel")
-	}
 	if err := a.keyRing.RemoveKey(sha256); err != nil {
 		return err
 	}

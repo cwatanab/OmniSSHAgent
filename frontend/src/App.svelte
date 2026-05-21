@@ -6,6 +6,7 @@
   import Textfield from "@smui/textfield";
   import FormField from "@smui/form-field";
   import Switch from "@smui/switch";
+  import Dialog, { Title, Actions } from "@smui/dialog";
   import Settings from "./Settings.svelte";
   import AddFileDialog from "./AddFileDialog.svelte";
 
@@ -128,8 +129,45 @@
 
   let togglingKey = null;
 
+  let deleteDialogOpen = false;
+  let deleteTargetSha256 = "";
+
+  let dragOver = false;
+  let dragCounter = 0;
+
   let settingsData = { ProxyModeOfNamedPipe: false };
   let appVersion = "";
+
+  const resetDragState = () => {
+    dragCounter = 0;
+    dragOver = false;
+  };
+
+  const isFileDrag = (e) => {
+    return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+  };
+
+  const addLocalFilePath = async (filePath) => {
+    if (!filePath) return;
+    try {
+      const privateKeyFile = await window.go.main.App.CheckKeyType(filePath, "");
+      if (privateKeyFile.encryption) {
+        addFileDialog.show(filePath);
+        return;
+      }
+      await addlocalFile(privateKeyFile);
+    } catch (err) {
+      console.error("drop addkey err:" + err);
+      toast.push(err, red);
+    }
+  };
+
+  const addDroppedFiles = async (paths) => {
+    if (settingsData.ProxyModeOfNamedPipe || !paths) return;
+    for (const path of paths) {
+      await addLocalFilePath(path);
+    }
+  };
 
   onMount(async () => {
     const storedWidth = localStorage.getItem(STORAGE_KEY_SIDEBAR_WIDTH);
@@ -143,6 +181,11 @@
     await loadSettings();
     await loadKeys();
     await applyWindowsTheme();
+
+    window.runtime.OnFileDrop((x, y, paths) => {
+      resetDragState();
+      addDroppedFiles(paths);
+    }, true);
   });
 
   const applyWindowsTheme = async () => {
@@ -275,10 +318,15 @@
       });
   };
 
-  const delKey = async (sha256) => {
-    if (!confirm(t[lang].confirmDelete)) {
-      return;
-    }
+  const delKey = (sha256) => {
+    deleteTargetSha256 = sha256;
+    deleteDialogOpen = true;
+  };
+
+  const confirmDelKey = async () => {
+    deleteDialogOpen = false;
+    const sha256 = deleteTargetSha256;
+    deleteTargetSha256 = "";
     await window.go.main.App.DeleteKey(sha256)
       .then(() => {
         toast.push(t[lang].deletedSuccess, green);
@@ -332,9 +380,48 @@
   };
 
   window.runtime.EventsOn("LoadKeysEvent", onLoadKeysEvent);
+
+  const handleKeydown = (e) => {
+    if (e.key === "Delete" && selectedKey && activeView === "detail" && !settingsData.ProxyModeOfNamedPipe) {
+      delKey(selectedKey.publickey.sha256);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    if (!settingsData.ProxyModeOfNamedPipe) {
+      dragOver = true;
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragCounter++;
+    if (!settingsData.ProxyModeOfNamedPipe) {
+      dragOver = true;
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      dragOver = false;
+    }
+  };
+
+  const handleDrop = (e) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    resetDragState();
+  };
 </script>
 
-<main class="app-container">
+<main class="app-container" class:drag-over={dragOver} on:dragenter={handleDragEnter} on:dragover={handleDragOver} on:dragleave={handleDragLeave} on:drop={handleDrop}>
   <!-- Left Panel: Sidebar -->
   <aside class="sidebar" style="width: {sidebarWidth}px; min-width: {sidebarWidth}px; max-width: {sidebarWidth}px;" data-wails-no-drag>
     <!-- Keys list -->
@@ -454,7 +541,20 @@
   <!-- Dialogs & Toasts -->
   <AddFileDialog lang={lang} bind:this={addFileDialog} on:eventAddPkfile={handleData} />
   <SvelteToast />
+
+  <Dialog bind:open={deleteDialogOpen} scrimClickAction="" escapeKeyAction="">
+    <Title>{t[lang].confirmDelete}</Title>
+    <Actions>
+      <Button on:click={() => { deleteDialogOpen = false; deleteTargetSha256 = ""; }}>
+        <Label>No</Label>
+      </Button>
+      <Button on:click={confirmDelKey}>
+        <Label>Yes</Label>
+      </Button>
+    </Actions>
+  </Dialog>
 </main>
 
 <!-- Mouse triggers for syncing keyrings when window becomes active -->
 <svelte:body on:mouseenter={syncAppState} on:mouseleave={syncAppState} />
+<svelte:window on:keydown={handleKeydown} />

@@ -110,6 +110,9 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
+		DragAndDrop: &options.DragAndDrop{
+			EnableFileDrop: true,
+		},
 		// Windows platform specific options
 		Windows: &windows.Options{
 			WebviewUserDataPath:  userCacheDir,

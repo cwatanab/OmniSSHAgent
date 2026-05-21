@@ -78,6 +78,8 @@ html, body {
   height: 100vh;
   width: 100vw;
   box-sizing: border-box;
+  position: relative;
+  --wails-drop-target: drop;
 }
 
 /* ── Sidebar ── */
@@ -386,4 +388,16 @@ html, body {
 .detail-actions button .material-icons {
   margin-right: 6px;
   color: var(--delete-red) !important;
+}
+
+/* Drag & drop overlay */
+.app-container.drag-over::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  border: 3px dashed var(--primary-color);
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 100;
 }

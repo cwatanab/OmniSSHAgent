@@ -45,6 +45,7 @@
 
   let open = false;
   let addButton = false;
+  let adding = false;
 
   const red = {
     duration: 7000,
@@ -73,14 +74,31 @@
   };
   let pkFile = newPkfile();
 
-  $: keytype = pkFile.fileType + ":" + pkFile.publickey.type;
+  $: keytype = [pkFile.fileType, pkFile.publickey.type].filter(Boolean).join(":");
+  $: canAdd = !adding && pkFile.filePath && (addButton || pkFile.encryption) && (!pkFile.encryption || pkFile.passphrase.length > 0);
 
   const dispatch = createEventDispatcher();
-  function add() {
-    dispatch("eventAddPkfile", pkFile);
-    open = false;
-    addButton = false;
-    pkFile = newPkfile();
+  async function add() {
+    if (!canAdd) return;
+    adding = true;
+    try {
+      if (pkFile.encryption) {
+        const pass = pkFile.passphrase;
+        const file = await window.go.main.App.CheckKeyType(pkFile.filePath, pass);
+        pkFile = { ...file };
+        pkFile.passphrase = pass;
+      }
+      dispatch("eventAddPkfile", pkFile);
+      open = false;
+      addButton = false;
+      pkFile = newPkfile();
+    } catch (err) {
+      console.error("add key error:" + err);
+      addButton = false;
+      toast.push(err, red);
+    } finally {
+      adding = false;
+    }
   }
   const openFile = async () => {
     await window.go.main.App.OpenFile()
@@ -117,8 +135,14 @@
       });
   };
 
-  export function show() {
+  export function show(filePath = "") {
+    addButton = false;
+    pkFile = newPkfile();
     open = true;
+    if (filePath) {
+      pkFile.filePath = filePath;
+      checkKeyType();
+    }
   }
 </script>
 
@@ -192,16 +216,13 @@
                 <HelperText slot="helper">passphrase of private key</HelperText>
               </Textfield>
             </FormField>
-            <Button on:click={checkKeyType}>
-              <Label>{t[lang].addKeyCheck}</Label>
-            </Button>
           {/if}
         </div>
       </Card>
     </Content>
     <Actions>
-      {#if addButton}
-        <Button on:click={add}>
+      {#if addButton || pkFile.encryption}
+        <Button on:click={add} disabled={!canAdd}>
           <Label>{t[lang].addKeyAdd}</Label>
         </Button>
       {/if}

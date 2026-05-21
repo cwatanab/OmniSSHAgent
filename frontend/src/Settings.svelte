@@ -15,7 +15,7 @@
     en: {
       settingsTitle: "Settings",
       settingsStartHidden: "Hide the window on launch",
-      settingsDebugLog: "Write debug log on startup (useful when tray is unresponsive)",
+      settingsDebugLog: "Enable debug logging",
       settingsOpenLogDir: "Open log directory",
       settingsBalloon: "Show a balloon notification when an SSH key is used",
       settingsPageant: "Enable Pageant",
@@ -53,7 +53,7 @@
     ja: {
       settingsTitle: "設定",
       settingsStartHidden: "起動時にウィンドウを非表示にする",
-      settingsDebugLog: "起動時にデバッグログを書き込む (トレイが反応しない場合に有用)",
+      settingsDebugLog: "デバッグログを有効にする",
       settingsOpenLogDir: "ログディレクトリを開く",
       settingsBalloon: "SSH鍵が使用されたときにバルーン通知を表示する",
       settingsPageant: "Pageant を有効にする",
