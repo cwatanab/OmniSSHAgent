@@ -14,6 +14,7 @@
   const t = {
     en: {
       settingsTitle: "Settings",
+      settingsStartAtLogin: "Start at Windows login (fast)",
       settingsStartHidden: "Hide the window on launch",
       settingsDebugLog: "Enable debug logging",
       settingsOpenLogDir: "Open log directory",
@@ -54,6 +55,7 @@
     },
     ja: {
       settingsTitle: "設定",
+      settingsStartAtLogin: "Windows ログオン時に起動する (高速)",
       settingsStartHidden: "起動時にウィンドウを非表示にする",
       settingsDebugLog: "デバッグログを有効にする",
       settingsOpenLogDir: "ログディレクトリを開く",
@@ -112,6 +114,7 @@
 
   let data = {
     StartHidden: false,
+    StartAtLogin: false,
     PageantAgent: false,
     NamedPipeAgent: false,
     UnixSocketAgent: false,
@@ -251,36 +254,38 @@
       </h3>
       <Card padded>
         <div class="settings-list">
-          <div class="settings-item settings-select-item">
-            <span class="material-icons setting-icon">language</span>
-            <label class="settings-select-label" for="lang-select"
-              >{t[lang].settingsLanguage}</label
-            >
-            <select
-              id="lang-select"
-              class="settings-select"
-              bind:value={uiLang}
-            >
-              <option value="auto">{t[lang].settingsLanguageAuto}</option>
-              <option value="ja">{t[lang].settingsLanguageJa}</option>
-              <option value="en">{t[lang].settingsLanguageEn}</option>
-            </select>
-          </div>
+          <div class="settings-inline-row">
+            <div class="settings-item settings-select-item">
+              <span class="material-icons setting-icon">language</span>
+              <label class="settings-select-label" for="lang-select"
+                >{t[lang].settingsLanguage}</label
+              >
+              <select
+                id="lang-select"
+                class="settings-select"
+                bind:value={uiLang}
+              >
+                <option value="auto">{t[lang].settingsLanguageAuto}</option>
+                <option value="ja">{t[lang].settingsLanguageJa}</option>
+                <option value="en">{t[lang].settingsLanguageEn}</option>
+              </select>
+            </div>
 
-          <div class="settings-item settings-select-item">
-            <span class="material-icons setting-icon">dark_mode</span>
-            <label class="settings-select-label" for="theme-select"
-              >{t[lang].settingsTheme}</label
-            >
-            <select
-              id="theme-select"
-              class="settings-select"
-              bind:value={uiTheme}
-            >
-              <option value="auto">{t[lang].settingsThemeAuto}</option>
-              <option value="dark">{t[lang].settingsThemeDark}</option>
-              <option value="light">{t[lang].settingsThemeLight}</option>
-            </select>
+            <div class="settings-item settings-select-item">
+              <span class="material-icons setting-icon">dark_mode</span>
+              <label class="settings-select-label" for="theme-select"
+                >{t[lang].settingsTheme}</label
+              >
+              <select
+                id="theme-select"
+                class="settings-select"
+                bind:value={uiTheme}
+              >
+                <option value="auto">{t[lang].settingsThemeAuto}</option>
+                <option value="dark">{t[lang].settingsThemeDark}</option>
+                <option value="light">{t[lang].settingsThemeLight}</option>
+              </select>
+            </div>
           </div>
 
           <div class="settings-item settings-select-item">
@@ -319,6 +324,13 @@
 
           <div class="settings-item">
             <FormField>
+              <Checkbox bind:checked={data.StartAtLogin} />
+              <span>{t[lang].settingsStartAtLogin}</span>
+            </FormField>
+          </div>
+
+          <div class="settings-item">
+            <FormField>
               <Checkbox bind:checked={data.StartHidden} />
               <span>{t[lang].settingsStartHidden}</span>
             </FormField>
@@ -331,23 +343,22 @@
             </FormField>
           </div>
 
-          <div class="settings-item">
-            <FormField>
-              <Checkbox bind:checked={data.DebugLog} />
-              <span>{t[lang].settingsDebugLog}</span>
-            </FormField>
-          </div>
+          <div class="settings-log-row">
+            <div class="settings-item">
+              <FormField>
+                <Checkbox bind:checked={data.DebugLog} />
+                <span>{t[lang].settingsDebugLog}</span>
+              </FormField>
+            </div>
 
-          <div
-            class="settings-item settings-log-item"
-            style="padding-left: 52px; margin-top: 4px; margin-bottom: 8px;"
-          >
-            <Button variant="outlined" on:click={openLogDir}>
-              <span class="material-icons" style="margin-right: 6px;"
-                >folder_open</span
-              >
-              <Label>{t[lang].settingsOpenLogDir}</Label>
-            </Button>
+            <div class="settings-item settings-log-item">
+              <Button variant="outlined" on:click={openLogDir}>
+                <span class="material-icons" style="margin-right: 6px;"
+                  >folder_open</span
+                >
+                <Label>{t[lang].settingsOpenLogDir}</Label>
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
@@ -502,6 +513,17 @@
     display: flex;
     align-items: center;
   }
+  .settings-log-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .settings-log-item {
+    justify-content: flex-end;
+    min-width: max-content;
+  }
   .settings-item :global(.mdc-form-field) {
     height: 32px;
   }
@@ -535,8 +557,15 @@
     padding-left: 52px;
     margin-top: -4px;
   }
+  .settings-inline-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: center;
+  }
   .settings-select-item {
     gap: 12px;
+    min-width: 0;
   }
   .settings-select-label {
     font-size: 14px;
@@ -552,6 +581,10 @@
     font-family: inherit;
     outline: none;
     cursor: pointer;
+  }
+  .settings-inline-row .settings-select {
+    width: 100%;
+    min-width: 96px;
   }
   .settings-select:hover {
     border-color: var(--primary-color, #0078d4);

@@ -15,6 +15,7 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/sys/windows/registry"
 
+	"github.com/masahide/OmniSSHAgent/pkg/autostart"
 	"github.com/masahide/OmniSSHAgent/pkg/cygwinsocket"
 	"github.com/masahide/OmniSSHAgent/pkg/namedpipe"
 	"github.com/masahide/OmniSSHAgent/pkg/pageant"
@@ -459,8 +460,14 @@ func (a *App) GetSettings() store.SaveData {
 }
 func (a *App) Save(s store.SaveData) error {
 	old := a.settings.SaveData
+	if old.StartAtLogin != s.StartAtLogin {
+		if err := autostart.SetEnabled(s.StartAtLogin); err != nil {
+			return err
+		}
+	}
 	a.setDebugLogEnabled(s.DebugLog)
 	a.settings.SaveData.StartHidden = s.StartHidden
+	a.settings.SaveData.StartAtLogin = s.StartAtLogin
 	a.settings.SaveData.PageantAgent = s.PageantAgent
 	a.settings.SaveData.NamedPipeAgent = s.NamedPipeAgent
 	a.settings.SaveData.UnixSocketAgent = s.UnixSocketAgent
@@ -472,6 +479,11 @@ func (a *App) Save(s store.SaveData) error {
 	if err := a.settings.Save(); err != nil {
 		a.settings.SaveData = old
 		a.setDebugLogEnabled(old.DebugLog)
+		if old.StartAtLogin != s.StartAtLogin {
+			if revertErr := autostart.SetEnabled(old.StartAtLogin); revertErr != nil {
+				log.Printf("failed to revert startup task setting: %v", revertErr)
+			}
+		}
 		return err
 	}
 	if agentSettingsChanged(old, a.settings.SaveData) {

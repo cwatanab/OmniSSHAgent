@@ -78,10 +78,10 @@ Set-Service -StartupType Disabled ssh-agent
 
 ### Registering for Startup
 
-OmniSSHAgent does not have an installer to register itself for startup automatically. To add it manually:
+For faster startup, open **Settings** and enable **Start at Windows login (fast)**.
+This registers a per-user Scheduled Task that runs at logon with the `--startup` flag, so the app starts hidden without waiting for the Startup folder.
 
-- Press the Windows logo key + R, type `shell:startup`, and click OK. This opens the Startup folder.
-- Copy and paste a shortcut to `OmniSSHAgent.exe` into the Startup folder.
+If you previously copied a shortcut into `shell:startup`, remove that shortcut to avoid a duplicate late startup attempt.
 
 ### Using with WSL2
 
