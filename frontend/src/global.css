@@ -99,6 +99,8 @@
   --mdc-switch-unselected-hover-track-color: #707070;
   --mdc-switch-unselected-hover-handle-color: #dedede;
   --mdc-switch-unselected-focus-handle-color: #dedede;
+  --fds-text-on-accent-primary: #ffffff;
+  --fds-text-on-accent-secondary: rgba(255, 255, 255, 0.9);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -121,6 +123,8 @@
     --mdc-switch-unselected-hover-track-color: #707070;
     --mdc-switch-unselected-hover-handle-color: #dedede;
     --mdc-switch-unselected-focus-handle-color: #dedede;
+    --fds-text-on-accent-primary: #ffffff;
+    --fds-text-on-accent-secondary: rgba(255, 255, 255, 0.9);
   }
 }
 
