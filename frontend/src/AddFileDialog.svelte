@@ -1,14 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte";
-  import { Title, Content } from "@smui/paper";
-  import Dialog, { Actions } from "@smui/dialog";
-  import Button, { Label } from "@smui/button";
-  import Textfield from "@smui/textfield";
-  import HelperText from "@smui/textfield/helper-text";
-  import Card from "@smui/card";
-  import FormField from "@smui/form-field";
-  import Switch from "@smui/switch";
-  import { toast } from "@zerodevx/svelte-toast";
+  import { Button, TextBox, ToggleSwitch, ContentDialog, InfoBar } from "fluent-svelte";
 
   export let lang = "en";
 
@@ -47,19 +39,23 @@
   let addButton = false;
   let adding = false;
 
-  const red = {
-    duration: 7000,
-    theme: {
-      "--toastBackground": "#F56565",
-      "--toastBarBackground": "#C53030",
-    },
-  };
-  const green = {
-    theme: {
-      "--toastBackground": "#48BB78",
-      "--toastBarBackground": "#2F855A",
-    },
-  };
+  let infoBarOpen = false;
+  let infoBarTitle = "";
+  let infoBarMessage = "";
+  let infoBarSeverity = "information";
+
+  function showNotification(title, message = "", severity = "information") {
+    infoBarTitle = title;
+    infoBarMessage = message;
+    infoBarSeverity = severity;
+    infoBarOpen = true;
+
+    if (severity === "success") {
+      setTimeout(() => {
+        infoBarOpen = false;
+      }, 5000);
+    }
+  }
 
   const newPkfile = () => {
     return {
@@ -95,7 +91,7 @@
     } catch (err) {
       console.error("add key error:" + err);
       addButton = false;
-      toast.push(err, red);
+      showNotification("Error adding key", err.message || err, "critical");
     } finally {
       adding = false;
     }
@@ -110,7 +106,7 @@
       .catch((err) => {
         console.error("OpenFile error:" + err);
         addButton = false;
-        toast.push(err, red);
+        showNotification("Error opening file", err.message || err, "critical");
       });
   };
   const checkKeyType = async () => {
@@ -122,7 +118,7 @@
         console.debug(pkFile);
         addButton = true;
         if (pkFile.encryption && pkFile.passphrase.length > 0) {
-          toast.push(t[lang].decryptedSuccess, green);
+          showNotification(t[lang].decryptedSuccess, "", "success");
         }
         if (pkFile.encryption && pkFile.passphrase.length == 0) {
           addButton = false;
@@ -131,13 +127,14 @@
       .catch((err) => {
         console.error("checkKeyTpye error:" + err);
         addButton = false;
-        toast.push(err, red);
+        showNotification("Error checking key", err.message || err, "critical");
       });
   };
 
   export function show(filePath = "") {
     addButton = false;
     pkFile = newPkfile();
+    infoBarOpen = false;
     open = true;
     if (filePath) {
       pkFile.filePath = filePath;
@@ -146,96 +143,80 @@
   }
 </script>
 
-<Dialog
+<ContentDialog
   bind:open
-  scrimClickAction=""
-  escapeKeyAction=""
-  surface$style="width: 850px; max-width: calc(100vw - 32px);"
-  aria-labelledby="mandatory-title"
-  aria-describedby="mandatory-content"
+  title={t[lang].addKeyTitle}
+  style="width: 650px; max-width: calc(100vw - 32px);"
 >
-  <div class="dialog">
-    <Title id="mandatory-title">{t[lang].addKeyTitle}</Title>
-    <Content id="mandatory-content">
-      <Card padded>
-        <div>
-          <div>
-            <FormField style="width: 100%;">
-              <Textfield
-                disabled
-                value={pkFile.filePath}
-                label={t[lang].addKeyFile}
-                style="width: 100%;"
-                helperLine$style="width: 100%;"
-              >
-                <HelperText slot="helper">.ppk, id_rsa...</HelperText>
-              </Textfield>
-            </FormField>
-          </div>
-          <div>
-            <Button on:click={openFile} variant="raised">
-              <Label>{t[lang].addKeyOpenFile}</Label>
-            </Button>
-          </div>
-          <div>
-            <FormField style="width: 100%;">
-              <Textfield
-                disabled
-                value={keytype}
-                label={t[lang].addKeyType}
-                style="width: 100%;"
-                helperLine$style="width: 100%;"
-              >
-                <HelperText slot="helper">private key type</HelperText>
-              </Textfield>
-            </FormField>
-          </div>
-          <div>
-            <FormField>
-              <Switch
-                bind:checked={pkFile.encryption}
-                disabled
-                value={t[lang].addKeyEncryption}
-              />
-              <span
-                >{pkFile.encryption
-                  ? t[lang].addKeyEncrypted
-                  : t[lang].addKeyNotEncrypted}</span
-              >
-            </FormField>
-          </div>
-          {#if pkFile.encryption}
-            <FormField style="width: 100%;">
-              <Textfield
-                bind:value={pkFile.passphrase}
-                type="password"
-                label={t[lang].addKeyPassphrase}
-                style="width: 100%;"
-                helperLine$style="width: 100%;"
-              >
-                <HelperText slot="helper">passphrase of private key</HelperText>
-              </Textfield>
-            </FormField>
-          {/if}
-        </div>
-      </Card>
-    </Content>
-    <Actions>
-      {#if addButton || pkFile.encryption}
-        <Button on:click={add} disabled={!canAdd}>
-          <Label>{t[lang].addKeyAdd}</Label>
-        </Button>
-      {/if}
-      <Button on:click={() => (open = false)}>
-        <Label>{t[lang].addKeyCancel}</Label>
-      </Button>
-    </Actions>
-  </div>
-</Dialog>
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    {#if infoBarOpen}
+      <InfoBar
+        bind:open={infoBarOpen}
+        severity={infoBarSeverity}
+        title={infoBarTitle}
+        message={infoBarMessage}
+        closable={true}
+      />
+    {/if}
 
-<style>
-  .dialog {
-    margin-left: 8px;
-    margin-right: 8px;
-  }
-</style>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <div>
+        <span style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">{t[lang].addKeyFile}</span>
+        <div style="display: flex; gap: 8px;">
+          <TextBox
+            disabled
+            value={pkFile.filePath}
+            placeholder=".ppk, id_rsa..."
+            style="flex: 1;"
+          />
+          <Button on:click={openFile} variant="accent">
+            {t[lang].addKeyOpenFile}
+          </Button>
+        </div>
+      </div>
+
+      <div>
+        <span style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">{t[lang].addKeyType}</span>
+        <TextBox
+          disabled
+          value={keytype}
+          placeholder="private key type"
+        />
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <ToggleSwitch
+          bind:checked={pkFile.encryption}
+          disabled
+        />
+        <span style="font-size: 13px;">
+          {pkFile.encryption
+            ? t[lang].addKeyEncrypted
+            : t[lang].addKeyNotEncrypted}
+        </span>
+      </div>
+
+      {#if pkFile.encryption}
+        <div>
+          <span style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">{t[lang].addKeyPassphrase}</span>
+          <TextBox
+            bind:value={pkFile.passphrase}
+            type="password"
+            placeholder="passphrase of private key"
+          />
+        </div>
+      {/if}
+    </div>
+  </div>
+
+  <svelte:fragment slot="footer">
+    {#if addButton || pkFile.encryption}
+      <Button variant="accent" on:click={add} disabled={!canAdd}>
+        {t[lang].addKeyAdd}
+      </Button>
+    {/if}
+    <Button on:click={() => (open = false)}>
+      {t[lang].addKeyCancel}
+    </Button>
+  </svelte:fragment>
+</ContentDialog>

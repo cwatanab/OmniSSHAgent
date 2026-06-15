@@ -1,30 +1,27 @@
 <script>
   import { onMount } from "svelte";
-  import { SvelteToast, toast } from "@zerodevx/svelte-toast";
-  import { ListItem } from "fluent-svelte";
+  import { ListItem, Button, TextBox, ToggleSwitch, ContentDialog, InfoBar } from "fluent-svelte";
   import "fluent-svelte/theme.css";
-  import Button, { Label } from "@smui/button";
-  import Paper, { Content } from "@smui/paper";
-  import Textfield from "@smui/textfield";
-  import FormField from "@smui/form-field";
-  import Switch from "@smui/switch";
-  import Dialog, { Title, Actions } from "@smui/dialog";
   import Settings from "./Settings.svelte";
   import AddFileDialog from "./AddFileDialog.svelte";
 
-  const red = {
-    duration: 7000,
-    theme: {
-      "--toastBackground": "#F56565",
-      "--toastBarBackground": "#C53030",
-    },
-  };
-  const green = {
-    theme: {
-      "--toastBackground": "#48BB78",
-      "--toastBarBackground": "#2F855A",
-    },
-  };
+  let infoBarOpen = false;
+  let infoBarTitle = "";
+  let infoBarMessage = "";
+  let infoBarSeverity = "information";
+
+  function showNotification(title, message = "", severity = "information") {
+    infoBarTitle = title;
+    infoBarMessage = message;
+    infoBarSeverity = severity;
+    infoBarOpen = true;
+
+    if (severity === "success") {
+      setTimeout(() => {
+        infoBarOpen = false;
+      }, 5000);
+    }
+  }
 
   const STORAGE_KEY_SIDEBAR_WIDTH = "omni-sidebar-width";
   let sidebarWidth = 270;
@@ -214,7 +211,7 @@
       await addlocalFile(privateKeyFile);
     } catch (err) {
       console.error("drop addkey err:" + err);
-      toast.push(err, red);
+      showNotification("Error dropping file", err.message || err, "critical");
     }
   };
 
@@ -346,7 +343,7 @@
       })
       .catch((err) => {
         console.error(err);
-        toast.push(err, red);
+        showNotification("Error loading settings", err.message || err, "critical");
       });
   };
 
@@ -358,7 +355,7 @@
       .catch((err) => {
         console.error("KeyList err:" + err);
         if (!settingsData.ProxyModeOfNamedPipe) {
-          toast.push(err, red);
+          showNotification("Error listing keys", err.message || err, "critical");
         }
       });
   };
@@ -398,12 +395,12 @@
   const addlocalFile = async (privateKeyFile) => {
     await window.go.main.App.AddLocalFile(privateKeyFile)
       .then(() => {
-        toast.push(t[lang].addedSuccess, green);
+        showNotification(t[lang].addedSuccess, "", "success");
         loadKeys();
       })
       .catch((err) => {
         console.error("addkey err:" + err);
-        toast.push(err, red);
+        showNotification("Error adding key", err.message || err, "critical");
       });
   };
 
@@ -418,7 +415,7 @@
     deleteTargetSha256 = "";
     await window.go.main.App.DeleteKey(sha256)
       .then(() => {
-        toast.push(t[lang].deletedSuccess, green);
+        showNotification(t[lang].deletedSuccess, "", "success");
         loadKeys();
         if (selectedKey && selectedKey.publickey.sha256 === sha256) {
           selectedKey = null;
@@ -427,7 +424,7 @@
       })
       .catch((err) => {
         if (err == "cancel") return;
-        toast.push(err, red);
+        showNotification("Error deleting key", err.message || err, "critical");
       });
   };
 
@@ -440,9 +437,10 @@
       );
       if (idx !== -1) {
         keys[idx].disabled = !keys[idx].disabled;
-        toast.push(
+        showNotification(
           keys[idx].disabled ? t[lang].disableKey : t[lang].enableKey,
-          green,
+          "",
+          "success"
         );
         keys = keys;
         if (
@@ -454,7 +452,7 @@
         }
       }
     } catch (err) {
-      toast.push(t[lang].toggleFail + ": " + err, red);
+      showNotification("Error toggling key", err.message || err, "critical");
     } finally {
       togglingKey = null;
     }
@@ -464,10 +462,10 @@
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        toast.push(t[lang].copied, green);
+        showNotification(t[lang].copied, "", "success");
       })
       .catch((err) => {
-        toast.push(t[lang].failCopy + ": " + err, red);
+        showNotification("Error copying text", err.message || err, "critical");
       });
   };
 
@@ -573,20 +571,19 @@
       {#if !settingsData.ProxyModeOfNamedPipe}
         <Button
           class="action-btn add-btn"
-          variant="raised"
+          variant="accent"
           on:click={() => addFileDialog.show()}
         >
-          <span class="material-icons">add</span>
-          <Label>{t[lang].addPrivateKey}</Label>
+          <span class="material-icons" style="margin-right: 6px;">add</span>
+          {t[lang].addPrivateKey}
         </Button>
       {/if}
       <Button
         class="action-btn settings-btn"
-        variant="outlined"
         on:click={openSettings}
       >
-        <span class="material-icons">settings</span>
-        <Label>{t[lang].settings}</Label>
+        <span class="material-icons" style="margin-right: 6px;">settings</span>
+        {t[lang].settings}
       </Button>
     </div>
   </aside>
@@ -599,6 +596,18 @@
 
   <!-- Right Panel: Main Content Area -->
   <section class="main-content" data-wails-no-drag>
+    {#if infoBarOpen}
+      <div style="margin-bottom: 16px;">
+        <InfoBar
+          bind:open={infoBarOpen}
+          severity={infoBarSeverity}
+          title={infoBarTitle}
+          message={infoBarMessage}
+          closable={true}
+        />
+      </div>
+    {/if}
+
     {#if activeView === "welcome"}
       <div class="welcome-view">
         <span class="material-icons welcome-icon">security</span>
@@ -610,12 +619,11 @@
       </div>
     {:else if activeView === "detail" && selectedKey}
       <div class="detail-view">
-        <div class="detail-header">
+        <div class="detail-header" style="display: flex; align-items: center; gap: 16px;">
           {#if !settingsData.ProxyModeOfNamedPipe}
-            <Switch
+            <ToggleSwitch
               checked={!selectedKey.disabled}
-              value="Toggle key enabled/disabled"
-              on:SMUISwitch:change={() => toggleKey(selectedKey)}
+              on:change={() => toggleKey(selectedKey)}
             />
           {/if}
           <h2>{selectedKey.name || t[lang].unnamedKey}</h2>
@@ -624,14 +632,13 @@
         <div class="detail-fields">
           <div class="field-group">
             <span class="field-label">{t[lang].filePath}</span>
-            <div class="field-with-action">
-              <Textfield
+            <div class="field-with-action" style="display: flex; gap: 8px;">
+              <TextBox
                 disabled
                 style="flex: 1;"
                 value={selectedKey.filePath}
               />
               <Button
-                variant="outlined"
                 on:click={() => copyText(selectedKey.filePath)}
                 >{t[lang].copy}</Button
               >
@@ -640,27 +647,24 @@
 
           <div class="field-group">
             <span class="field-label">{t[lang].keyType}</span>
-            <Textfield
+            <TextBox
               disabled
-              style="width: 100%;"
               value={selectedKey.publickey.type}
             />
           </div>
 
           <div class="field-group">
             <span class="field-label">{t[lang].fingerprintSha256}</span>
-            <Textfield
+            <TextBox
               disabled
-              style="width: 100%;"
               value={selectedKey.publickey.sha256}
             />
           </div>
 
           <div class="field-group">
             <span class="field-label">{t[lang].fingerprintMd5}</span>
-            <Textfield
+            <TextBox
               disabled
-              style="width: 100%;"
               value={selectedKey.publickey.md5}
             />
           </div>
@@ -668,11 +672,10 @@
           <div class="field-group">
             <span class="field-label">{t[lang].publicKey}</span>
             <div class="textarea-with-action">
-              <Paper variant="outlined" class="publickey-box">
-                <Content>{selectedKey.publickey.string}</Content>
-              </Paper>
+              <div class="publickey-box">
+                {selectedKey.publickey.string}
+              </div>
               <Button
-                variant="outlined"
                 on:click={() => copyText(selectedKey.publickey.string)}
                 >{t[lang].copyKey}</Button
               >
@@ -684,11 +687,10 @@
           <div class="detail-actions">
             <Button
               class="delete-btn"
-              variant="outlined"
               on:click={() => delKey(selectedKey.publickey.sha256)}
             >
-              <span class="material-icons">delete</span>
-              <Label>{t[lang].deleteKey}</Label>
+              <span class="material-icons" style="margin-right: 6px;">delete</span>
+              {t[lang].deleteKey}
             </Button>
           </div>
         {/if}
@@ -708,24 +710,25 @@
     bind:this={addFileDialog}
     on:eventAddPkfile={handleData}
   />
-  <SvelteToast />
 
-  <Dialog bind:open={deleteDialogOpen} scrimClickAction="" escapeKeyAction="">
-    <Title>{t[lang].confirmDelete}</Title>
-    <Actions>
+  <ContentDialog
+    bind:open={deleteDialogOpen}
+    title={t[lang].confirmDelete}
+  >
+    <svelte:fragment slot="footer">
       <Button
         on:click={() => {
           deleteDialogOpen = false;
           deleteTargetSha256 = "";
         }}
       >
-        <Label>No</Label>
+        No
       </Button>
-      <Button on:click={confirmDelKey}>
-        <Label>Yes</Label>
+      <Button variant="accent" on:click={confirmDelKey}>
+        Yes
       </Button>
-    </Actions>
-  </Dialog>
+    </svelte:fragment>
+  </ContentDialog>
 </main>
 
 <!-- Mouse triggers for syncing keyrings when window becomes active -->
