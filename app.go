@@ -208,6 +208,21 @@ func (a *App) startConfiguredAgentsLocked() {
 			defer a.agentWG.Done()
 			pa.RunAgent(agentCtx)
 		}()
+
+		pageantPipeName, err := pageant.ObfuscatedPipeName()
+		if err != nil {
+			log.Printf("Failed to compute Pageant named pipe name: %v", err)
+		} else {
+			paPipe := &namedpipe.NamedPipe{ExtendedAgent: a.keyRing, Debug: debug, Name: pageantPipeName}
+			log.Printf("Starting Pageant named pipe: %s", pageantPipeName)
+			a.agentWG.Add(1)
+			go func() {
+				defer a.agentWG.Done()
+				if err := paPipe.RunAgent(agentCtx); err != nil {
+					log.Printf("Pageant named pipe agent error: %v", err)
+				}
+			}()
+		}
 	}
 	if a.settings.NamedPipeAgent {
 		pipeName := ""
