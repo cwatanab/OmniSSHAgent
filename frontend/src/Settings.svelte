@@ -1,7 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte";
-  import { Button, TextBox, ToggleSwitch, Expander, Checkbox } from "fluent-svelte";
-  import { toast } from "@zerodevx/svelte-toast";
+  import { Button, TextBox, ToggleSwitch, Expander, Checkbox, InfoBar } from "fluent-svelte";
   import { onMount } from "svelte";
 
   export let lang = "en";
@@ -93,19 +92,23 @@
 
   const dispatch = createEventDispatcher();
 
-  const red = {
-    duration: 7000,
-    theme: {
-      "--toastBackground": "#F56565",
-      "--toastBarBackground": "#C53030",
-    },
-  };
-  const green = {
-    theme: {
-      "--toastBackground": "#48BB78",
-      "--toastBarBackground": "#2F855A",
-    },
-  };
+  let infoBarOpen = false;
+  let infoBarTitle = "";
+  let infoBarMessage = "";
+  let infoBarSeverity = "information";
+
+  function showNotification(title, message = "", severity = "information") {
+    infoBarTitle = title;
+    infoBarMessage = message;
+    infoBarSeverity = severity;
+    infoBarOpen = true;
+
+    if (severity === "success") {
+      setTimeout(() => {
+        infoBarOpen = false;
+      }, 5000);
+    }
+  }
 
   let data = {
     StartHidden: false,
@@ -156,7 +159,7 @@
       data = { ...savedata };
     } catch (err) {
       console.error(err);
-      toast.push(err, red);
+      showNotification("Error loading settings", err.message || err, "critical");
     }
     const storedLang = localStorage.getItem(STORAGE_KEY_LANG);
     if (storedLang) uiLang = storedLang;
@@ -203,11 +206,11 @@
       }
       localStorage.setItem(STORAGE_KEY_ACCENT, accentToStore);
 
-      toast.push(t[lang].settingsSaved, green);
+      showNotification(t[lang].settingsSaved, "", "success");
       dispatch("save");
     } catch (err) {
       console.error(err);
-      toast.push(err, red);
+      showNotification("Error saving settings", err.message || err, "critical");
     }
   };
 
@@ -220,7 +223,7 @@
       await window.go.main.App.OpenLogDir();
     } catch (err) {
       console.error(err);
-      toast.push(err, red);
+      showNotification("Error opening log directory", err.message || err, "critical");
     }
   };
 
@@ -240,6 +243,18 @@
   <div class="settings-header">
     <h2>{t[lang].settingsTitle}</h2>
   </div>
+
+  {#if infoBarOpen}
+    <div style="margin-bottom: 16px;">
+      <InfoBar
+        bind:open={infoBarOpen}
+        severity={infoBarSeverity}
+        title={infoBarTitle}
+        message={infoBarMessage}
+        closable={true}
+      />
+    </div>
+  {/if}
 
   <div class="settings-content">
     <!-- General Settings Section -->
