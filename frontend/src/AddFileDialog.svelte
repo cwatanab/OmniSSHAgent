@@ -164,13 +164,13 @@
         <span style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">{t[lang].addKeyFile}</span>
         <div style="display: flex; gap: 8px;">
           <TextBox
-            disabled
+            readonly
             value={pkFile.filePath}
             placeholder=".ppk, id_rsa..."
             style="flex: 1;"
           />
-          <Button on:click={openFile} variant="accent">
-            {t[lang].addKeyOpenFile}
+          <Button on:click={openFile} style="min-width: 36px; padding: 0;" title={t[lang].addKeyOpenFile}>
+            <span class="material-icons" style="font-size: 18px;">folder_open</span>
           </Button>
         </div>
       </div>
@@ -178,7 +178,7 @@
       <div>
         <span style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">{t[lang].addKeyType}</span>
         <TextBox
-          disabled
+          readonly
           value={keytype}
           placeholder="private key type"
         />
