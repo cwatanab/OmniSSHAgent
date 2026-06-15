@@ -619,7 +619,7 @@
       </div>
     {:else if activeView === "detail" && selectedKey}
       <div class="detail-view">
-        <div class="detail-header" style="display: flex; align-items: center; gap: 16px;">
+        <div class="detail-header" style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
           {#if !settingsData.ProxyModeOfNamedPipe}
             <ToggleSwitch
               checked={!selectedKey.disabled}
@@ -629,56 +629,73 @@
           <h2>{selectedKey.name || t[lang].unnamedKey}</h2>
         </div>
 
-        <div class="detail-fields">
-          <div class="field-group">
-            <span class="field-label">{t[lang].filePath}</span>
-            <div class="field-with-action" style="display: flex; gap: 8px;">
-              <TextBox
-                disabled
-                style="flex: 1;"
-                value={selectedKey.filePath}
-              />
-              <Button
-                on:click={() => copyText(selectedKey.filePath)}
-                >{t[lang].copy}</Button
-              >
+        <div class="detail-fields" style="max-width: 800px; display: flex; flex-direction: column; gap: 16px;">
+          <!-- Basic Info Card -->
+          <div class="detail-card">
+            <!-- File Path Row -->
+            <div class="detail-row">
+              <div class="detail-row-info" style="flex: 1;">
+                <span class="detail-row-title">{t[lang].filePath}</span>
+                <span class="detail-row-value">{selectedKey.filePath}</span>
+              </div>
+              <Button on:click={() => copyText(selectedKey.filePath)}>
+                <span class="material-icons" style="font-size: 16px; margin-right: 4px;">content_copy</span>
+                {t[lang].copy}
+              </Button>
+            </div>
+
+            <div class="detail-row-divider"></div>
+
+            <!-- Key Type Row -->
+            <div class="detail-row">
+              <div class="detail-row-info">
+                <span class="detail-row-title">{t[lang].keyType}</span>
+                <span class="detail-row-value">{selectedKey.publickey.type}</span>
+              </div>
             </div>
           </div>
 
-          <div class="field-group">
-            <span class="field-label">{t[lang].keyType}</span>
-            <TextBox
-              disabled
-              value={selectedKey.publickey.type}
-            />
-          </div>
-
-          <div class="field-group">
-            <span class="field-label">{t[lang].fingerprintSha256}</span>
-            <TextBox
-              disabled
-              value={selectedKey.publickey.sha256}
-            />
-          </div>
-
-          <div class="field-group">
-            <span class="field-label">{t[lang].fingerprintMd5}</span>
-            <TextBox
-              disabled
-              value={selectedKey.publickey.md5}
-            />
-          </div>
-
-          <div class="field-group">
-            <span class="field-label">{t[lang].publicKey}</span>
-            <div class="textarea-with-action">
-              <div class="publickey-box">
-                {selectedKey.publickey.string}
+          <!-- Fingerprints Card -->
+          <div class="detail-card-title">Fingerprints</div>
+          <div class="detail-card">
+            <!-- SHA256 -->
+            <div class="detail-row">
+              <div class="detail-row-info" style="flex: 1;">
+                <span class="detail-row-title">{t[lang].fingerprintSha256}</span>
+                <span class="detail-row-value monospace">{selectedKey.publickey.sha256}</span>
               </div>
-              <Button
-                on:click={() => copyText(selectedKey.publickey.string)}
-                >{t[lang].copyKey}</Button
-              >
+              <Button on:click={() => copyText(selectedKey.publickey.sha256)}>
+                <span class="material-icons" style="font-size: 16px; margin-right: 4px;">content_copy</span>
+                {t[lang].copy}
+              </Button>
+            </div>
+
+            <div class="detail-row-divider"></div>
+
+            <!-- MD5 -->
+            <div class="detail-row">
+              <div class="detail-row-info" style="flex: 1;">
+                <span class="detail-row-title">{t[lang].fingerprintMd5}</span>
+                <span class="detail-row-value monospace">{selectedKey.publickey.md5}</span>
+              </div>
+              <Button on:click={() => copyText(selectedKey.publickey.md5)}>
+                <span class="material-icons" style="font-size: 16px; margin-right: 4px;">content_copy</span>
+                {t[lang].copy}
+              </Button>
+            </div>
+          </div>
+
+          <!-- Public Key Card -->
+          <div class="detail-card-title">{t[lang].publicKey}</div>
+          <div class="detail-card" style="padding: 16px; gap: 12px;">
+            <div class="publickey-box" style="margin: 0; height: 120px;">
+              {selectedKey.publickey.string}
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+              <Button variant="accent" on:click={() => copyText(selectedKey.publickey.string)}>
+                <span class="material-icons" style="font-size: 16px; margin-right: 6px;">content_copy</span>
+                {t[lang].copyKey}
+              </Button>
             </div>
           </div>
         </div>
