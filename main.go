@@ -22,7 +22,7 @@ import (
 
 const (
 	AppName    = "OmniSSHAgent"
-	AppVersion = "0.7.0"
+	AppVersion = "0.7.1"
 )
 
 //go:embed all:frontend/dist
@@ -92,10 +92,6 @@ func main() {
 		Title:             AppName,
 		Width:             900,
 		Height:            900,
-		MinWidth:          720,
-		MinHeight:         570,
-		MaxWidth:          1280,
-		MaxHeight:         900,
 		DisableResize:     false,
 		Fullscreen:        false,
 		Frameless:         false,

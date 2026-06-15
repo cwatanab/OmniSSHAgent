@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { SvelteToast, toast } from "@zerodevx/svelte-toast";
+  import "fluent-svelte/theme.css";
   import Button, { Label } from "@smui/button";
   import Paper, { Content } from "@smui/paper";
   import Textfield from "@smui/textfield";
@@ -259,6 +260,7 @@
     const root = document.documentElement;
     root.classList.toggle("light-theme", isLight);
     root.classList.toggle("dark-theme", !isLight);
+    root.classList.toggle("dark", !isLight);
     updateSmuiThemeStylesheet(isLight);
   };
 
@@ -302,6 +304,7 @@
     root.style.removeProperty("--primary-on-color");
     root.style.removeProperty("--mdc-theme-primary");
     root.style.removeProperty("--mdc-theme-on-primary");
+    root.style.removeProperty("--fds-accent-default");
 
     const normalizedColor = normalizeHexColor(color);
     if (!normalizedColor) return;
@@ -311,6 +314,7 @@
       "--primary-on-color",
       getReadableTextColor(normalizedColor),
     );
+    root.style.setProperty("--fds-accent-default", normalizedColor);
   };
 
   const applyWindowsTheme = async () => {

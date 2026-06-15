@@ -1,11 +1,6 @@
 <script>
   import { createEventDispatcher } from "svelte";
-  import Button, { Label } from "@smui/button";
-  import Textfield from "@smui/textfield";
-  import HelperText from "@smui/textfield/helper-text";
-  import Card from "@smui/card";
-  import FormField from "@smui/form-field";
-  import Checkbox from "@smui/checkbox";
+  import { Button, TextBox, ToggleSwitch, Expander, Checkbox } from "fluent-svelte";
   import { toast } from "@zerodevx/svelte-toast";
   import { onMount } from "svelte";
 
@@ -247,52 +242,61 @@
   </div>
 
   <div class="settings-content">
-    <div class="settings-section">
-      <h3 class="section-title">
+    <!-- General Settings Section -->
+    <Expander expanded={true}>
+      <div class="section-header-content">
         <span class="material-icons section-icon">tune</span>
-        {t[lang].sectionGeneral}
-      </h3>
-      <Card padded>
-        <div class="settings-list">
-          <div class="settings-inline-row">
-            <div class="settings-item settings-select-item">
-              <span class="material-icons setting-icon">language</span>
-              <label class="settings-select-label" for="lang-select"
-                >{t[lang].settingsLanguage}</label
-              >
-              <select
-                id="lang-select"
-                class="settings-select"
-                bind:value={uiLang}
-              >
-                <option value="auto">{t[lang].settingsLanguageAuto}</option>
-                <option value="ja">{t[lang].settingsLanguageJa}</option>
-                <option value="en">{t[lang].settingsLanguageEn}</option>
-              </select>
-            </div>
+        <span>{t[lang].sectionGeneral}</span>
+      </div>
 
-            <div class="settings-item settings-select-item">
-              <span class="material-icons setting-icon">dark_mode</span>
-              <label class="settings-select-label" for="theme-select"
-                >{t[lang].settingsTheme}</label
-              >
-              <select
-                id="theme-select"
-                class="settings-select"
-                bind:value={uiTheme}
-              >
-                <option value="auto">{t[lang].settingsThemeAuto}</option>
-                <option value="dark">{t[lang].settingsThemeDark}</option>
-                <option value="light">{t[lang].settingsThemeLight}</option>
-              </select>
+      <svelte:fragment slot="content">
+        <div class="settings-list">
+          <!-- Language -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">language</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsLanguage}</span>
+              </div>
             </div>
+            <select
+              id="lang-select"
+              class="settings-select"
+              bind:value={uiLang}
+            >
+              <option value="auto">{t[lang].settingsLanguageAuto}</option>
+              <option value="ja">{t[lang].settingsLanguageJa}</option>
+              <option value="en">{t[lang].settingsLanguageEn}</option>
+            </select>
           </div>
 
-          <div class="settings-item settings-select-item">
-            <span class="material-icons setting-icon">palette</span>
-            <label class="settings-select-label" for="accent-select"
-              >{t[lang].settingsAccent}</label
+          <!-- Theme -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">dark_mode</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsTheme}</span>
+              </div>
+            </div>
+            <select
+              id="theme-select"
+              class="settings-select"
+              bind:value={uiTheme}
             >
+              <option value="auto">{t[lang].settingsThemeAuto}</option>
+              <option value="dark">{t[lang].settingsThemeDark}</option>
+              <option value="light">{t[lang].settingsThemeLight}</option>
+            </select>
+          </div>
+
+          <!-- Accent Color -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">palette</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsAccent}</span>
+              </div>
+            </div>
             <div class="accent-picker-container">
               <select
                 id="accent-select"
@@ -322,130 +326,167 @@
             </div>
           </div>
 
-          <div class="settings-item">
-            <FormField>
-              <Checkbox bind:checked={data.StartAtLogin} />
-              <span>{t[lang].settingsStartAtLogin}</span>
-            </FormField>
-          </div>
-
-          <div class="settings-item">
-            <FormField>
-              <Checkbox bind:checked={data.StartHidden} />
-              <span>{t[lang].settingsStartHidden}</span>
-            </FormField>
-          </div>
-
-          <div class="settings-item">
-            <FormField>
-              <Checkbox bind:checked={data.ShowBalloon} />
-              <span>{t[lang].settingsBalloon}</span>
-            </FormField>
-          </div>
-
-          <div class="settings-log-row">
-            <div class="settings-item">
-              <FormField>
-                <Checkbox bind:checked={data.DebugLog} />
-                <span>{t[lang].settingsDebugLog}</span>
-              </FormField>
+          <!-- Start at Login -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">login</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsStartAtLogin}</span>
+              </div>
             </div>
+            <ToggleSwitch bind:checked={data.StartAtLogin} />
+          </div>
 
-            <div class="settings-item settings-log-item">
-              <Button variant="outlined" on:click={openLogDir}>
-                <span class="material-icons" style="margin-right: 6px;"
-                  >folder_open</span
-                >
-                <Label>{t[lang].settingsOpenLogDir}</Label>
+          <!-- Start Hidden -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">visibility_off</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsStartHidden}</span>
+              </div>
+            </div>
+            <ToggleSwitch bind:checked={data.StartHidden} />
+          </div>
+
+          <!-- Balloon Notification -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">notifications</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsBalloon}</span>
+              </div>
+            </div>
+            <ToggleSwitch bind:checked={data.ShowBalloon} />
+          </div>
+
+          <!-- Debug Log -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">bug_report</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsDebugLog}</span>
+              </div>
+            </div>
+            <div class="settings-item-actions">
+              <ToggleSwitch bind:checked={data.DebugLog} />
+              <Button on:click={openLogDir}>
+                <span class="material-icons" style="margin-right: 6px; font-size: 16px;">folder_open</span>
+                {t[lang].settingsOpenLogDir}
               </Button>
             </div>
           </div>
         </div>
-      </Card>
-    </div>
+      </svelte:fragment>
+    </Expander>
 
-    <div class="settings-section">
-      <h3 class="section-title">
+    <!-- SSH Agent Settings Section -->
+    <Expander expanded={true}>
+      <div class="section-header-content">
         <span class="material-icons section-icon">terminal</span>
-        {t[lang].sectionAgent}
-      </h3>
-      <Card padded>
+        <span>{t[lang].sectionAgent}</span>
+      </div>
+
+      <svelte:fragment slot="content">
         <div class="settings-list">
-          <div class="settings-item">
-            <FormField>
-              <Checkbox bind:checked={data.PageantAgent} />
-              <span>{t[lang].settingsPageant}</span>
-            </FormField>
-          </div>
-          <div class="settings-item">
-            <FormField>
-              <Checkbox
-                bind:checked={data.NamedPipeAgent}
-                on:change={namePipeToggle}
-              />
-              <span>{t[lang].settingsNamedPipe}</span>
-            </FormField>
-          </div>
-          <div class="settings-item">
-            <FormField>
-              <Checkbox
-                bind:checked={data.ProxyModeOfNamedPipe}
-                on:change={proxyToggle}
-              />
-              <span>{t[lang].settingsProxy}</span>
-            </FormField>
-          </div>
-          <div class="settings-item">
-            <FormField>
-              <Checkbox bind:checked={data.UnixSocketAgent} />
-              <span>{t[lang].settingsUnix}</span>
-            </FormField>
-          </div>
-          {#if data.UnixSocketAgent}
-            <div class="settings-field">
-              <Textfield
-                bind:value={data.UnixSocketPath}
-                label={t[lang].settingsUnixPath}
-                style="width: 100%;"
-                helperLine$style="width: 100%;"
-              >
-                <HelperText slot="helper"
-                  >{t[lang].settingsUnixHelper}</HelperText
-                >
-              </Textfield>
+          <!-- Pageant -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">vpn_key</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsPageant}</span>
+              </div>
             </div>
-          {/if}
-          <div class="settings-item">
-            <FormField>
-              <Checkbox bind:checked={data.CygWinAgent} />
-              <span>{t[lang].settingsCygwin}</span>
-            </FormField>
+            <ToggleSwitch bind:checked={data.PageantAgent} />
           </div>
-          {#if data.CygWinAgent}
-            <div class="settings-field">
-              <Textfield
-                bind:value={data.CygWinSocketPath}
-                label={t[lang].settingsCygwinPath}
-                style="width: 100%;"
-                helperLine$style="width: 100%;"
-              >
-                <HelperText slot="helper"
-                  >{t[lang].settingsCygwinHelper}</HelperText
-                >
-              </Textfield>
+
+          <!-- Named Pipe Agent -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">settings_ethernet</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsNamedPipe}</span>
+              </div>
             </div>
-          {/if}
+            <ToggleSwitch
+              bind:checked={data.NamedPipeAgent}
+              on:change={namePipeToggle}
+            />
+          </div>
+
+          <!-- Proxy Mode -->
+          <div class="settings-item-row">
+            <div class="settings-item-row-left">
+              <span class="material-icons">swap_horiz</span>
+              <div class="settings-item-text">
+                <span class="settings-item-title">{t[lang].settingsProxy}</span>
+              </div>
+            </div>
+            <ToggleSwitch
+              bind:checked={data.ProxyModeOfNamedPipe}
+              on:change={proxyToggle}
+            />
+          </div>
+
+          <!-- Unix Domain Socket -->
+          <div class="settings-item-row-group">
+            <div class="settings-item-row">
+              <div class="settings-item-row-left">
+                <span class="material-icons">folder</span>
+                <div class="settings-item-text">
+                  <span class="settings-item-title">{t[lang].settingsUnix}</span>
+                </div>
+              </div>
+              <ToggleSwitch bind:checked={data.UnixSocketAgent} />
+            </div>
+            {#if data.UnixSocketAgent}
+              <div class="settings-field-row">
+                <div class="settings-field-label">
+                  <span class="field-title">{t[lang].settingsUnixPath}</span>
+                  <span class="field-helper">{t[lang].settingsUnixHelper}</span>
+                </div>
+                <TextBox
+                  bind:value={data.UnixSocketPath}
+                  style="width: 100%;"
+                />
+              </div>
+            {/if}
+          </div>
+
+          <!-- Cygwin Unix Domain Socket -->
+          <div class="settings-item-row-group">
+            <div class="settings-item-row">
+              <div class="settings-item-row-left">
+                <span class="material-icons">dns</span>
+                <div class="settings-item-text">
+                  <span class="settings-item-title">{t[lang].settingsCygwin}</span>
+                </div>
+              </div>
+              <ToggleSwitch bind:checked={data.CygWinAgent} />
+            </div>
+            {#if data.CygWinAgent}
+              <div class="settings-field-row">
+                <div class="settings-field-label">
+                  <span class="field-title">{t[lang].settingsCygwinPath}</span>
+                  <span class="field-helper">{t[lang].settingsCygwinHelper}</span>
+                </div>
+                <TextBox
+                  bind:value={data.CygWinSocketPath}
+                  style="width: 100%;"
+                />
+              </div>
+            {/if}
+          </div>
         </div>
-      </Card>
-    </div>
+      </svelte:fragment>
+    </Expander>
   </div>
 
   <div class="settings-actions">
-    <Button variant="raised" on:click={save}>
-      <Label>{t[lang].settingsSave}</Label>
+    <Button variant="accent" on:click={save}>
+      {t[lang].settingsSave}
     </Button>
     <Button on:click={cancel}>
-      <Label>{t[lang].settingsCancel}</Label>
+      {t[lang].settingsCancel}
     </Button>
   </div>
 </div>
@@ -456,148 +497,192 @@
     flex-direction: column;
     height: 100%;
     box-sizing: border-box;
+    padding: 16px;
+    background-color: var(--fds-solid-background-base, #f3f3f3);
+    color: var(--fds-text-primary, #1f1f1f);
   }
   .settings-header {
-    margin-bottom: 8px;
+    margin-bottom: 16px;
   }
   .settings-header h2 {
     margin: 0;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
   }
   .settings-content {
     flex: 1;
     overflow-y: auto;
-    margin-bottom: 8px;
+    margin-bottom: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    padding-right: 4px;
   }
+  
+  /* section header inside Expander */
+  .section-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .section-icon {
+    font-size: 18px;
+    color: var(--fds-text-secondary, #5f5f5f);
+  }
+
   .settings-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
-  .settings-section {
+
+  /* Fluent-like Row Styling */
+  .settings-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: var(--fds-card-background-default, #ffffff);
+    border: 1px solid var(--fds-card-stroke-default, #e5e5e5);
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+  }
+  .settings-item-row:hover {
+    background-color: var(--fds-subtle-fill-secondary, #f0f0f0);
+  }
+  .settings-item-row-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .settings-item-row-left .material-icons {
+    font-size: 20px;
+    color: var(--fds-text-secondary, #5f5f5f);
+  }
+  .settings-item-text {
     display: flex;
     flex-direction: column;
-    gap: 6px;
   }
-  .section-title {
-    margin: 4px 0 2px 4px;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-secondary, #666);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+  .settings-item-title {
+    font-size: 14px;
+    font-weight: 500;
   }
-  .section-icon {
-    font-size: 20px;
-    color: var(--text-secondary, #666);
-    text-transform: none !important;
-  }
-  .setting-icon {
-    font-size: 18px;
-    color: var(--text-secondary, #666);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .checkbox-icon {
-    margin-right: 6px;
-  }
-  .settings-item {
+  .settings-item-actions {
     display: flex;
     align-items: center;
+    gap: 16px;
   }
-  .settings-log-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 8px;
+
+  .settings-item-row-group {
+    background-color: var(--fds-card-background-default, #ffffff);
+    border: 1px solid var(--fds-card-stroke-default, #e5e5e5);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
   }
-  .settings-log-item {
-    justify-content: flex-end;
-    min-width: max-content;
+  .settings-item-row-group .settings-item-row {
+    border: none;
+    border-radius: 4px 4px 0 0;
+    background-color: transparent;
   }
-  .settings-item :global(.mdc-form-field) {
-    height: 32px;
+  .settings-item-row-group .settings-item-row:hover {
+    background-color: var(--fds-subtle-fill-secondary, #f0f0f0);
   }
-  .settings-content :global(.mdc-card) {
-    padding: 12px 10px !important;
+
+  /* TextBox and Field customization */
+  .settings-field-row {
+    padding: 12px 16px 16px 52px;
+    border-top: 1px solid var(--fds-divider-stroke-default, #e5e5e5);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
+  .settings-field-label {
+    display: flex;
+    flex-direction: column;
+  }
+  .field-title {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .field-helper {
+    font-size: 11px;
+    color: var(--fds-text-secondary, #5f5f5f);
+  }
+
+  /* Accent picker */
   .accent-picker-container {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
   }
   .accent-color-picker {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     padding: 0;
-    border: 1px solid var(--border-color, #e0e0e0);
+    border: 1px solid var(--fds-control-stroke-default, #e5e5e5);
     border-radius: 4px;
     background: none;
     cursor: pointer;
     box-sizing: border-box;
   }
   .accent-preview-dot {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    border: 1px solid var(--border-color, #e0e0e0);
+    border: 1px solid var(--fds-control-stroke-default, #e5e5e5);
     display: inline-block;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--fds-card-shadow);
   }
-  .settings-field {
-    padding-left: 52px;
-    margin-top: -4px;
-  }
-  .settings-inline-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    align-items: center;
-  }
-  .settings-select-item {
-    gap: 12px;
-    min-width: 0;
-  }
-  .settings-select-label {
-    font-size: 14px;
-    min-width: 60px;
-  }
+
+  /* Standard Select styling with Fluent style */
   .settings-select {
-    padding: 8px 12px;
-    border: 1px solid var(--mdc-text-field-outlined-idle-border-color, #ccc);
+    padding: 6px 32px 6px 12px;
+    border: 1px solid var(--fds-control-stroke-default, #ccc);
     border-radius: 4px;
-    background-color: var(--bg-color, #fff);
-    color: var(--text-color, #000);
-    font-size: 14px;
+    background-color: var(--fds-control-fill-default, #fff);
+    color: var(--fds-text-primary, #000);
+    font-size: 13px;
     font-family: inherit;
     outline: none;
     cursor: pointer;
-  }
-  .settings-inline-row .settings-select {
-    width: 100%;
-    min-width: 96px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+    transition: background-color 0.15s, border-color 0.15s;
   }
   .settings-select:hover {
-    border-color: var(--primary-color, #0078d4);
+    background-color: var(--fds-subtle-fill-secondary, #f0f0f0);
+    border-color: var(--fds-control-stroke-secondary, #aaa);
   }
   .settings-select:focus {
-    border-color: var(--primary-color, #0078d4);
-    border-width: 2px;
+    border-color: var(--fds-accent-default, #0078d4);
   }
+
+  /* Expander custom variables override to match card design */
+  :global(.fds-expander) {
+    border: 1px solid var(--fds-card-stroke-default, #e5e5e5) !important;
+    background-color: var(--fds-card-background-default, #ffffff) !important;
+    border-radius: 4px !important;
+    overflow: hidden;
+  }
+  :global(.fds-expander-content) {
+    background-color: var(--fds-card-background-secondary, #fafafa) !important;
+    padding: 8px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .settings-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-color, #e0e0e0);
+    padding-top: 16px;
+    border-top: 1px solid var(--fds-divider-stroke-default, #e5e5e5);
   }
 </style>
