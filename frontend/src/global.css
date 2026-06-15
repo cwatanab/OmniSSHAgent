@@ -219,7 +219,6 @@ body {
   color: var(--text-secondary);
   padding: 8px 4px;
   text-align: center;
-  font-style: italic;
 }
 
 .keys-list {
