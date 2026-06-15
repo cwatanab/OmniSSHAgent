@@ -1,0 +1,33 @@
+<<<<<<< HEAD
+{
+  "fixed": {
+    "file_version": "0.6.3"
+  },
+  "info": {
+    "0000": {
+      "ProductVersion": "0.6.3",
+      "CompanyName": "OmniSSHAgent",
+      "FileDescription": "OmniSSHAgent",
+      "LegalCopyright": "Copyright.........",
+      "ProductName": "OmniSSHAgent",
+      "Comments": "Built using Wails (https://wails.app)"
+    }
+  }
+}
+=======
+{
+  "fixed": {
+    "file_version": "0.7.0"
+  },
+  "info": {
+    "0000": {
+      "ProductVersion": "0.7.0",
+      "CompanyName": "OmniSSHAgent",
+      "FileDescription": "OmniSSHAgent",
+      "LegalCopyright": "Copyright.........",
+      "ProductName": "OmniSSHAgent",
+      "Comments": "Built using Wails (https://wails.app)"
+    }
+  }
+}
+>>>>>>> e8f3a435d237306e22c6235f0fd7cbae77bc1c8a
