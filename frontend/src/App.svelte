@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { SvelteToast, toast } from "@zerodevx/svelte-toast";
+  import { ListItem } from "fluent-svelte";
   import "fluent-svelte/theme.css";
   import Button, { Label } from "@smui/button";
   import Paper, { Content } from "@smui/paper";
@@ -545,24 +546,23 @@
       {:else}
         <ul class="keys-list">
           {#each keys as key}
-            <li
-              class="key-item {selectedKey &&
-              selectedKey.publickey.sha256 === key.publickey.sha256
-                ? 'active'
-                : ''} {key.disabled ? 'disabled' : ''}"
+            <ListItem
+              class="key-list-item"
+              selected={selectedKey && selectedKey.publickey.sha256 === key.publickey.sha256}
+              disabled={key.disabled}
               on:click={() => selectKey(key)}
               on:dblclick={() => {
                 if (!settingsData.ProxyModeOfNamedPipe) toggleKey(key);
               }}
             >
-              <span class="material-icons key-icon">key</span>
-              <div class="key-info">
+              <span slot="icon" class="material-icons key-icon">key</span>
+              <span class="key-info">
                 <span class="key-name">{key.name || t[lang].unnamedKey}</span>
                 <span class="key-type"
                   >{key.publickey.type || t[lang].unknownType}</span
                 >
-              </div>
-            </li>
+              </span>
+            </ListItem>
           {/each}
         </ul>
       {/if}
