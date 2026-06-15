@@ -239,9 +239,9 @@ body {
 }
 
 .key-list-item:before {
-  block-size: 24px !important;
-  inline-size: 4px !important;
-  border-radius: 4px !important;
+  block-size: 36px !important;
+  inline-size: 6px !important;
+  border-radius: 3px !important;
 }
 
 .key-list-item .key-icon {
