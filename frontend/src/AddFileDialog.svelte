@@ -146,7 +146,7 @@
 <ContentDialog
   bind:open
   title={t[lang].addKeyTitle}
-  style="width: 650px; max-width: calc(100vw - 32px);"
+  style="width: 500px; max-width: calc(100vw - 32px);"
 >
   <div style="display: flex; flex-direction: column; gap: 16px;">
     {#if infoBarOpen}
@@ -159,9 +159,10 @@
       />
     {/if}
 
-    <div style="display: flex; flex-direction: column; gap: 12px;">
-      <div>
-        <span style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">{t[lang].addKeyFile}</span>
+    <div class="detail-card" style="padding: 4px 16px;">
+      <!-- Private Key File Row -->
+      <div class="detail-row" style="flex-direction: column; align-items: stretch; padding: 12px 0;">
+        <span class="detail-row-title" style="margin-bottom: 6px;">{t[lang].addKeyFile}</span>
         <div style="display: flex; gap: 8px;">
           <TextBox
             readonly
@@ -175,8 +176,11 @@
         </div>
       </div>
 
-      <div>
-        <span style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">{t[lang].addKeyType}</span>
+      <div class="detail-row-divider"></div>
+
+      <!-- Key Type Row -->
+      <div class="detail-row" style="flex-direction: column; align-items: stretch; padding: 12px 0;">
+        <span class="detail-row-title" style="margin-bottom: 6px;">{t[lang].addKeyType}</span>
         <TextBox
           readonly
           value={keytype}
@@ -184,21 +188,30 @@
         />
       </div>
 
-      <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="detail-row-divider"></div>
+
+      <!-- Encryption Switch Row (Left title, right toggle switch) -->
+      <div class="detail-row" style="padding: 12px 0;">
+        <div class="detail-row-info">
+          <span class="detail-row-title">{t[lang].addKeyEncryption}</span>
+          <span class="detail-row-value" style="font-size: 13px;">
+            {pkFile.encryption
+              ? t[lang].addKeyEncrypted
+              : t[lang].addKeyNotEncrypted}
+          </span>
+        </div>
         <ToggleSwitch
           bind:checked={pkFile.encryption}
           disabled
         />
-        <span style="font-size: 13px;">
-          {pkFile.encryption
-            ? t[lang].addKeyEncrypted
-            : t[lang].addKeyNotEncrypted}
-        </span>
       </div>
 
       {#if pkFile.encryption}
-        <div>
-          <span style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 4px;">{t[lang].addKeyPassphrase}</span>
+        <div class="detail-row-divider"></div>
+
+        <!-- Passphrase Row -->
+        <div class="detail-row" style="flex-direction: column; align-items: stretch; padding: 12px 0;">
+          <span class="detail-row-title" style="margin-bottom: 6px;">{t[lang].addKeyPassphrase}</span>
           <TextBox
             bind:value={pkFile.passphrase}
             type="password"
