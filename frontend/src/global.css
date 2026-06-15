@@ -359,11 +359,11 @@ body {
 
 /* ── Fluent Detail View Cards ── */
 .detail-card-title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  margin-top: 16px;
-  margin-bottom: 6px;
-  color: var(--fds-text-secondary, var(--text-secondary));
+  margin-top: 20px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -388,27 +388,27 @@ body {
 .detail-row-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
 .detail-row-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--fds-text-secondary, var(--text-secondary));
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .detail-row-value {
-  font-size: 14px;
-  color: var(--fds-text-primary, var(--text-color));
+  font-size: 15px;
+  color: var(--text-color);
   word-break: break-all;
 }
 
 .detail-row-value.monospace {
   font-family: Consolas, Monaco, monospace;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .detail-row-divider {
