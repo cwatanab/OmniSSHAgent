@@ -3,7 +3,9 @@ package pageant
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -11,12 +13,23 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strings"
 	"syscall"
 	"unsafe"
 
 	"github.com/cwchiu/go-winapi"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/sys/windows"
+)
+
+const (
+	cryptProtectMemoryCrossProcess = 0x1
+	cryptProtectMemoryBlockSize    = 16
+)
+
+var (
+	procCryptProtectMemory = syscall.NewLazyDLL("crypt32.dll").NewProc("CryptProtectMemory")
+	procGetUserNameExA     = syscall.NewLazyDLL("secur32.dll").NewProc("GetUserNameExA")
 )
 
 const (
@@ -239,4 +252,63 @@ func startCancelWatcher(ctx context.Context, threadID uint32) func() {
 	return func() {
 		close(exitCh)
 	}
+}
+
+const NameUserPrincipal = 8
+
+func getUserName() string {
+	var nameLength uint32 = 0
+	// GetUserNameExA returns FALSE with ERROR_MORE_DATA when buffer is NULL, but we only need the required size in nameLength.
+	// We ignore the return value here.
+	_, _, _ = procGetUserNameExA.Call(
+		uintptr(NameUserPrincipal),
+		0,
+		uintptr(unsafe.Pointer(&nameLength)),
+	)
+	if nameLength > 0 {
+		nameBuf := make([]byte, nameLength)
+		ret, _, _ := procGetUserNameExA.Call(
+			uintptr(NameUserPrincipal),
+			uintptr(unsafe.Pointer(&nameBuf[0])),
+			uintptr(unsafe.Pointer(&nameLength)),
+		)
+		if ret != 0 {
+			// Find terminating null byte and convert to string
+			name := string(nameBuf[:nameLength-1])
+			if idx := strings.Index(name, "@"); idx != -1 {
+				name = name[:idx]
+			}
+			if name != "" {
+				return name
+			}
+		}
+	}
+	return os.Getenv("USERNAME")
+}
+
+func ObfuscatedPipeName() (string, error) {
+	username := getUserName()
+
+	input := "Pageant"
+	cryptlen := ((len(input) + 1) + cryptProtectMemoryBlockSize - 1) / cryptProtectMemoryBlockSize * cryptProtectMemoryBlockSize
+	cryptdata := make([]byte, cryptlen)
+	copy(cryptdata, []byte(input))
+
+	ret, _, _ := procCryptProtectMemory.Call(
+		uintptr(unsafe.Pointer(&cryptdata[0])),
+		uintptr(cryptlen),
+		uintptr(cryptProtectMemoryCrossProcess),
+	)
+	if ret == 0 {
+		return "", fmt.Errorf("CryptProtectMemory failed")
+	}
+
+	h := sha256.New()
+	var lenBuf [4]byte
+	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(cryptdata)))
+	h.Write(lenBuf[:])
+	h.Write(cryptdata)
+	hashStr := hex.EncodeToString(h.Sum(nil))
+
+	return fmt.Sprintf("pageant.%s.%s", username, hashStr), nil
 }
