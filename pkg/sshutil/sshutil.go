@@ -42,6 +42,14 @@ type KeyRing struct {
 
 // AddKeySettings saves PrivateKeyFile informatio in the store
 func (k *KeyRing) AddKeySettings(key sshkey.PrivateKeyFile) (string, error) {
+	if key.PublicKey.SHA256 != "" {
+		for _, existing := range k.settings.Keys {
+			if existing.PublicKey.SHA256 == key.PublicKey.SHA256 {
+				return "", fmt.Errorf("key already registered: %s", key.Name)
+			}
+		}
+	}
+
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return "", err

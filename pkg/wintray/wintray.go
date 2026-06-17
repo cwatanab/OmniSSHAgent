@@ -132,6 +132,10 @@ func (ti *TrayIcon) wndProc(hWnd winapi.HWND, msg uint32, wParam, lParam uintptr
 	case winapi.WM_DESTROY:
 		winapi.PostQuitMessage(0)
 	default:
+		if msg == ti.taskbarCreatedMsg && ti.taskbarCreatedMsg != 0 {
+			ti.registerIcon()
+			return 0
+		}
 		r := winapi.DefWindowProc(hWnd, msg, wParam, lParam)
 		return r
 	}
@@ -153,9 +157,10 @@ type TrayIcon struct {
 	BalloonClickFunc func()
 	TrayClickFunc    func()
 
-	currentMenuID uint32
-	menuItems     map[uint32]*MenuItem
-	menuItemsLock sync.RWMutex
+	currentMenuID        uint32
+	menuItems            map[uint32]*MenuItem
+	menuItemsLock        sync.RWMutex
+	taskbarCreatedMsg    uint32
 	// menus keeps track of the submenus keyed by the menu item ID, plus 0
 	// which corresponds to the main popup menu.
 	menus     map[uint32]winapi.HMENU
@@ -436,16 +441,16 @@ func (ti *TrayIcon) showMenu() error {
 
 func (ti *TrayIcon) registerIcon() bool {
 	data := ti.initData()
-	data.UFlags |= NIF_MESSAGE | NIF_SHOWTIP
+	data.UFlags |= NIF_MESSAGE | NIF_SHOWTIP | winapi.NIF_ICON
+	data.HIcon = ti.icon
 	data.UCallbackMessage = TrayIconMsg
 	if !data.Notify(winapi.NIM_ADD) {
 		reportTrayFatalError(fmt.Sprintf("Shell_NotifyIcon(NIM_ADD) failed: %d", winapi.GetLastError()))
 		return false
 	}
-	if data.Notify(winapi.NIM_MODIFY) {
-		// nothing to log on success
-	} else {
-		log.Printf("wintray: NIM_MODIFY failed (post NIM_ADD): %d", winapi.GetLastError())
+	data.UVersionOrTimeout = NOTIFYICON_VERSION_4
+	if !data.Notify(winapi.NIM_SETVERSION) {
+		log.Printf("wintray: NIM_SETVERSION failed: %d", winapi.GetLastError())
 	}
 	return true
 }
@@ -489,6 +494,7 @@ func (ti *TrayIcon) Run(onReady, onExit func()) {
 
 	ti.hwnd = ti.createMainWindow()
 	ti.createMenu()
+	ti.taskbarCreatedMsg = winapi.RegisterWindowMessage(windows.StringToUTF16Ptr("TaskbarCreated"))
 	ti.icon = winapi.LoadIcon(winapi.GetModuleHandle(nil), winapi.MAKEINTRESOURCE(3))
 	ti.registerIcon()
 	ti.SetIcon(ti.icon)

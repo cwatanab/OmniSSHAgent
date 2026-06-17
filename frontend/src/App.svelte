@@ -538,7 +538,6 @@
   >
     <!-- Keys list -->
     <div class="sidebar-content">
-      <div class="keys-section-title">{t[lang].keysTitle}</div>
       {#if keys.length === 0}
         <div class="empty-keys-message">{t[lang].emptyKeys}</div>
       {:else}
@@ -612,7 +611,6 @@
       <div class="welcome-view">
         <span class="material-icons welcome-icon">security</span>
         <h2>{t[lang].welcomeTitle}</h2>
-        <p>{t[lang].welcomeDesc}</p>
         {#if appVersion}
           <div class="welcome-version">v{appVersion}</div>
         {/if}
