@@ -243,6 +243,10 @@ body {
   border-radius: 3px !important;
 }
 
+.key-list-item.disabled {
+  pointer-events: auto !important;
+}
+
 .key-list-item .key-icon {
   margin-right: 12px;
 }

@@ -37,9 +37,9 @@ jobs:
       - name: build
         run: |
           $env:PATH += ";$env:USERPROFILE\scoop\shims"
-          wails build -nsis
-          go build -o build/bin/omni-socat.exe ./cmd/omni-socat
-          go build -o build/bin/agent-bench.exe ./cmd/agent-bench
+          wails build -nsis -ldflags "-s -w" -trimpath
+          go build -ldflags="-s -w" -trimpath -o build/bin/omni-socat.exe ./cmd/omni-socat
+          go build -ldflags="-s -w" -trimpath -o build/bin/agent-bench.exe ./cmd/agent-bench
           powershell Compress-Archive -Path build/bin/omni-socat.exe -DestinationPath build/bin/omni-socat.zip
           rm build/bin/omni-socat.exe
           powershell Compress-Archive -Path build/bin/agent-bench.exe -DestinationPath build/bin/agent-bench.zip
@@ -67,11 +67,11 @@ jobs:
           cache: true
       - name: build
         run: |
-          CGO_ENABLED=0 go build -o build/bin/wsl2-ssh-agent-proxy ./cmd/wsl2-ssh-agent-proxy
-          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o build/bin/agent-bench-linux-arm64 ./cmd/agent-bench
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/bin/agent-bench-linux-amd64 ./cmd/agent-bench
-          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o build/bin/agent-bench-mac-arm64 ./cmd/agent-bench
-          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o build/bin/agent-bench-mac-amd64 ./cmd/agent-bench
+          CGO_ENABLED=0 go build -ldflags="-s -w" -trimpath -o build/bin/wsl2-ssh-agent-proxy ./cmd/wsl2-ssh-agent-proxy
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -trimpath -o build/bin/agent-bench-linux-arm64 ./cmd/agent-bench
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o build/bin/agent-bench-linux-amd64 ./cmd/agent-bench
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -trimpath -o build/bin/agent-bench-mac-arm64 ./cmd/agent-bench
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o build/bin/agent-bench-mac-amd64 ./cmd/agent-bench
           gzip build/bin/wsl2-ssh-agent-proxy
           gzip build/bin/agent-bench-linux-arm64
           gzip build/bin/agent-bench-linux-amd64
