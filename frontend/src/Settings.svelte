@@ -274,15 +274,17 @@
                 <span class="settings-item-title">{t[lang].settingsLanguage}</span>
               </div>
             </div>
-            <select
-              id="lang-select"
-              class="settings-select"
-              bind:value={uiLang}
-            >
-              <option value="auto">{t[lang].settingsLanguageAuto}</option>
-              <option value="ja">{t[lang].settingsLanguageJa}</option>
-              <option value="en">{t[lang].settingsLanguageEn}</option>
-            </select>
+            <span class="select-wrapper">
+              <select
+                id="lang-select"
+                class="settings-select"
+                bind:value={uiLang}
+              >
+                <option value="auto">{t[lang].settingsLanguageAuto}</option>
+                <option value="ja">{t[lang].settingsLanguageJa}</option>
+                <option value="en">{t[lang].settingsLanguageEn}</option>
+              </select>
+            </span>
           </div>
 
           <!-- Theme -->
@@ -293,15 +295,17 @@
                 <span class="settings-item-title">{t[lang].settingsTheme}</span>
               </div>
             </div>
-            <select
-              id="theme-select"
-              class="settings-select"
-              bind:value={uiTheme}
-            >
-              <option value="auto">{t[lang].settingsThemeAuto}</option>
-              <option value="dark">{t[lang].settingsThemeDark}</option>
-              <option value="light">{t[lang].settingsThemeLight}</option>
-            </select>
+            <span class="select-wrapper">
+              <select
+                id="theme-select"
+                class="settings-select"
+                bind:value={uiTheme}
+              >
+                <option value="auto">{t[lang].settingsThemeAuto}</option>
+                <option value="dark">{t[lang].settingsThemeDark}</option>
+                <option value="light">{t[lang].settingsThemeLight}</option>
+              </select>
+            </span>
           </div>
 
           <!-- Accent Color -->
@@ -313,20 +317,26 @@
               </div>
             </div>
             <div class="accent-picker-container">
-              <select
-                id="accent-select"
-                class="settings-select"
-                bind:value={uiAccent}
-              >
-                <option value="default">{t[lang].settingsAccentDefault}</option>
-                <option value="blue">{t[lang].settingsAccentBlue}</option>
-                <option value="indigo">{t[lang].settingsAccentIndigo}</option>
-                <option value="teal">{t[lang].settingsAccentTeal}</option>
-                <option value="emerald">{t[lang].settingsAccentEmerald}</option>
-                <option value="sunset">{t[lang].settingsAccentSunset}</option>
-                <option value="rose">{t[lang].settingsAccentRose}</option>
-                <option value="custom">{t[lang].settingsAccentCustom}</option>
-              </select>
+              <span
+                class="accent-preview-dot"
+                style="background-color: {effectiveAccentColor};"
+              ></span>
+              <span class="select-wrapper">
+                <select
+                  id="accent-select"
+                  class="settings-select"
+                  bind:value={uiAccent}
+                >
+                  <option value="default">{t[lang].settingsAccentDefault}</option>
+                  <option value="blue">{t[lang].settingsAccentBlue}</option>
+                  <option value="indigo">{t[lang].settingsAccentIndigo}</option>
+                  <option value="teal">{t[lang].settingsAccentTeal}</option>
+                  <option value="emerald">{t[lang].settingsAccentEmerald}</option>
+                  <option value="sunset">{t[lang].settingsAccentSunset}</option>
+                  <option value="rose">{t[lang].settingsAccentRose}</option>
+                  <option value="custom">{t[lang].settingsAccentCustom}</option>
+                </select>
+              </span>
               {#if uiAccent === "custom"}
                 <input
                   type="color"
@@ -334,10 +344,6 @@
                   bind:value={customAccentColor}
                 />
               {/if}
-              <span
-                class="accent-preview-dot"
-                style="background-color: {effectiveAccentColor};"
-              ></span>
             </div>
           </div>
 
@@ -652,30 +658,50 @@
     box-shadow: var(--fds-card-shadow);
   }
 
-  /* Standard Select styling with Fluent style */
+  /* Select wrapper for theme-aware caret */
+  .select-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .select-wrapper::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--text-color);
+    pointer-events: none;
+  }
+
+  /* Standard Select styling */
   .settings-select {
+    width: 170px;
     padding: 6px 32px 6px 12px;
-    border: 1px solid var(--fds-control-stroke-default, #ccc);
+    border: 1px solid var(--border-color);
     border-radius: 4px;
-    background-color: var(--fds-control-fill-default, #fff);
-    color: var(--fds-text-primary, #000);
+    background-color: var(--surface-color);
+    color: var(--text-color);
     font-size: 13px;
     font-family: inherit;
     outline: none;
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 14px;
     transition: background-color 0.15s, border-color 0.15s;
   }
   .settings-select:hover {
-    background-color: var(--fds-subtle-fill-secondary, #f0f0f0);
-    border-color: var(--fds-control-stroke-secondary, #aaa);
+    background-color: var(--hover-bg);
+    border-color: var(--text-secondary);
   }
   .settings-select:focus {
-    border-color: var(--fds-accent-default, #0078d4);
+    border-color: var(--primary-color);
+  }
+  .settings-select option {
+    background-color: var(--surface-color);
+    color: var(--text-color);
   }
 
   /* Expander custom variables override to match card design */
@@ -699,5 +725,8 @@
     gap: 8px;
     padding-top: 16px;
     border-top: 1px solid var(--fds-divider-stroke-default, #e5e5e5);
+  }
+  .settings-actions :global(button) {
+    min-width: 120px;
   }
 </style>

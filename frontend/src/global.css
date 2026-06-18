@@ -101,6 +101,18 @@
   --mdc-switch-unselected-focus-handle-color: #dedede;
   --fds-text-on-accent-primary: #ffffff;
   --fds-text-on-accent-secondary: rgba(255, 255, 255, 0.9);
+  /* Fluent UI dark theme overrides */
+  --fds-solid-background-base: #1f1f1f;
+  --fds-text-primary: #f5f5f5;
+  --fds-text-secondary: #c7c7c7;
+  --fds-card-background-default: #242424;
+  --fds-card-background-secondary: #2b2b2b;
+  --fds-card-stroke-default: #3d3d3d;
+  --fds-control-fill-default: #303030;
+  --fds-control-stroke-default: #3d3d3d;
+  --fds-control-stroke-secondary: #5f5f5f;
+  --fds-subtle-fill-secondary: #303030;
+  --fds-divider-stroke-default: #3d3d3d;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -125,6 +137,18 @@
     --mdc-switch-unselected-focus-handle-color: #dedede;
     --fds-text-on-accent-primary: #ffffff;
     --fds-text-on-accent-secondary: rgba(255, 255, 255, 0.9);
+    /* Fluent UI dark theme overrides */
+    --fds-solid-background-base: #1f1f1f;
+    --fds-text-primary: #f5f5f5;
+    --fds-text-secondary: #c7c7c7;
+    --fds-card-background-default: #242424;
+    --fds-card-background-secondary: #2b2b2b;
+    --fds-card-stroke-default: #3d3d3d;
+    --fds-control-fill-default: #303030;
+    --fds-control-stroke-default: #3d3d3d;
+    --fds-control-stroke-secondary: #5f5f5f;
+    --fds-subtle-fill-secondary: #303030;
+    --fds-divider-stroke-default: #3d3d3d;
   }
 }
 
@@ -347,7 +371,7 @@ body {
 
 .detail-header h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
 }
 
@@ -363,7 +387,7 @@ body {
 
 /* ── Fluent Detail View Cards ── */
 .detail-card-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   margin-top: 20px;
   margin-bottom: 8px;
@@ -397,7 +421,7 @@ body {
 }
 
 .detail-row-title {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -428,7 +452,7 @@ body {
   border: 1px solid var(--fds-card-stroke-default, var(--border-color)) !important;
   box-shadow: none !important;
   font-family: Consolas, Monaco, monospace;
-  font-size: 12px;
+  font-size: 13px;
   padding: 6px 8px;
   box-sizing: border-box;
   border-radius: 4px;
