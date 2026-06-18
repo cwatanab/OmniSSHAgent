@@ -617,14 +617,17 @@
       </div>
     {:else if activeView === "detail" && selectedKey}
       <div class="detail-view">
-        <div class="detail-header" style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+        <div class="detail-header">
+          <Button on:click={() => activeView = 'welcome'}>
+            <span class="material-icons">arrow_back</span>
+          </Button>
+          <h2>{selectedKey.name || t[lang].unnamedKey}</h2>
           {#if !settingsData.ProxyModeOfNamedPipe}
             <ToggleSwitch
               checked={!selectedKey.disabled}
               on:change={() => toggleKey(selectedKey)}
             />
           {/if}
-          <h2>{selectedKey.name || t[lang].unnamedKey}</h2>
         </div>
 
         <div class="detail-fields" style="max-width: 800px; display: flex; flex-direction: column; gap: 16px;">
