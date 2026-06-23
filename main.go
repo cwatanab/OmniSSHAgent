@@ -22,7 +22,7 @@ import (
 
 const (
 	AppName    = "OmniSSHAgent"
-	AppVersion = "0.7.4"
+	AppVersion = "0.7.5"
 )
 
 //go:embed all:frontend/dist
@@ -49,6 +49,7 @@ func main() {
 	debug.SetGCPercent(20)
 
 	isService := flag.Bool("service", false, "run as a headless background service")
+	startup := flag.Bool("startup", false, "start hidden in system tray")
 	port := flag.Int("port", 53210, "port for the HTTP API service")
 	flag.Parse()
 
@@ -95,7 +96,7 @@ func main() {
 		DisableResize:     false,
 		Fullscreen:        false,
 		Frameless:         false,
-		StartHidden:       app.settings.StartHidden,
+		StartHidden:       *startup || app.settings.StartHidden,
 		HideWindowOnClose: true,
 		// RGBA:              &options.RGBA{R: 33, G: 37, B: 43, A: 255},
 		Assets:     assets,
