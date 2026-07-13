@@ -273,6 +273,37 @@ func (a *App) startup(ctx context.Context) {
 	a.ti.BalloonClickFunc = a.showWindow
 	a.ti.TrayClickFunc = a.showWindow
 
+	wintray.EnsureRegistered()
+
+	if len(iconData) > 0 {
+		cacheDir, err := os.UserCacheDir()
+		if err != nil {
+			log.Printf("app: UserCacheDir failed: %v", err)
+			cacheDir = os.TempDir()
+		}
+		iconDir := filepath.Join(cacheDir, AppName)
+		if err := os.MkdirAll(iconDir, 0700); err != nil {
+			log.Printf("app: MkdirAll failed: %v", err)
+		} else {
+			iconPath := filepath.Join(iconDir, "appicon.png")
+			if err := os.WriteFile(iconPath, iconData, 0644); err != nil {
+				log.Printf("app: WriteFile failed: %v", err)
+			} else {
+				wintray.SetRegisteredIconPath(iconPath)
+				log.Printf("app: icon written to %s", iconPath)
+			}
+			if len(keyIconData) > 0 {
+				keyIconPath := filepath.Join(iconDir, "keyicon.png")
+				if err := os.WriteFile(keyIconPath, keyIconData, 0644); err != nil {
+					log.Printf("app: WriteFile for key icon failed: %v", err)
+				} else {
+					a.ti.SetBalloonIconPath(keyIconPath)
+					log.Printf("app: key icon written to %s", keyIconPath)
+				}
+			}
+		}
+	}
+
 	a.wg.Add(1)
 	go func() {
 		defer func() {

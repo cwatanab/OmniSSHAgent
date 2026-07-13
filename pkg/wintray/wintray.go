@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"unsafe"
 
 	"github.com/cwchiu/go-winapi"
@@ -31,6 +35,9 @@ const (
 	NIF_GUID     = 0x00000020
 	NIF_REALTIME = 0x00000040
 	NIF_SHOWTIP  = 0x00000080
+
+	// Balloon notification flags
+	NIIF_NOSOUND = 0x00000010
 )
 
 type trayCommand struct {
@@ -168,8 +175,9 @@ type TrayIcon struct {
 	// menuOf keeps track of the menu each menu item belongs to.
 	menuOf       map[uint32]winapi.HMENU
 	menuOfLock   sync.RWMutex
-	icon         winapi.HICON
-	commandCh    chan trayCommand
+	icon            winapi.HICON
+	balloonIconPath string
+	commandCh       chan trayCommand
 	commandMu    sync.Mutex
 	shuttingDown bool
 }
@@ -269,18 +277,86 @@ func (ti *TrayIcon) SetTooltip(tooltip string) {
 func (ti *TrayIcon) SetTitle(title string) {
 }
 
+func (ti *TrayIcon) SetBalloonIconPath(path string) {
+	ti.balloonIconPath = path
+}
+
 func (ti *TrayIcon) ShowBalloonNotification(title, text string) {
-	ti.enqueueCommand(func() {
-		data := ti.initData()
-		data.UFlags |= winapi.NIF_INFO | NIF_REALTIME
-		if title != "" {
-			copy(data.SzInfoTitle[:], windows.StringToUTF16(title))
+	// Run in a goroutine to avoid blocking the main tray thread.
+	go func() {
+		err := ti.showPowerShellToast(title, text)
+		if err == nil {
+			return
 		}
-		copy(data.SzInfo[:], windows.StringToUTF16(text))
-		if !data.Notify(winapi.NIM_MODIFY) {
-			log.Printf("cannot show balloon: %d", winapi.GetLastError())
-		}
-	})
+		log.Printf("failed to show powershell silent toast: %v", err)
+
+		// If PowerShell fails, fall back to legacy Shell_NotifyIcon balloon notification.
+		ti.enqueueCommand(func() {
+			data := ti.initData()
+			data.UFlags |= winapi.NIF_INFO | NIF_REALTIME
+			data.DwInfoFlags |= NIIF_NOSOUND
+			if title != "" {
+				copy(data.SzInfoTitle[:], windows.StringToUTF16(title))
+			}
+			data.HBalloonIcon = ti.icon
+			copy(data.SzInfo[:], windows.StringToUTF16(text))
+			if !data.Notify(winapi.NIM_MODIFY) {
+				log.Printf("cannot show balloon: %d", winapi.GetLastError())
+			}
+		})
+	}()
+}
+
+func (ti *TrayIcon) showPowerShellToast(title, text string) error {
+	// Build image element if icon path is available
+	var imageXML string
+	if ti.balloonIconPath != "" {
+		iconPath := filepath.ToSlash(ti.balloonIconPath)
+		iconPath = strings.ReplaceAll(iconPath, " ", "%20")
+		imageXML = fmt.Sprintf("<image placement=\"appLogoOverride\" src=\"file:///%s\"/>", iconPath)
+	}
+
+	// Escape strings for PowerShell XML
+	escapedTitle := escapeXMLForPowerShell(title)
+	escapedText := escapeXMLForPowerShell(text)
+
+	tag := fmt.Sprintf("%s_tag_%d", AppUserModelID, os.Getpid())
+
+	toastXML := fmt.Sprintf(
+		"<toast duration=\"short\"><visual><binding template=\"ToastGeneric\">%s<text>%s</text><text>%s</text></binding></visual><audio silent=\"true\"/></toast>",
+		imageXML, escapedTitle, escapedText)
+
+	// Escape single quotes for PowerShell single-quoted string
+	toastXML = strings.ReplaceAll(toastXML, "'", "''")
+
+	group := AppUserModelID + "_group"
+
+	script := fmt.Sprintf(
+		"[void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]; "+
+			"[void][Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime]; "+
+			"$xml = New-Object Windows.Data.Xml.Dom.XmlDocument; "+
+			"$xml.LoadXml('%s'); "+
+			"$toast = New-Object Windows.UI.Notifications.ToastNotification $xml; "+
+			"$toast.Tag = '%s'; "+
+			"$toast.Group = '%s'; "+
+			"$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('%s'); "+
+			"$notifier.Show($toast); "+
+			"Start-Sleep -Seconds 5; "+
+			"[Windows.UI.Notifications.ToastNotificationManager]::History.Remove('%s', '%s', '%s')",
+		toastXML, tag, group, AppUserModelID, tag, group, AppUserModelID)
+
+	cmd := exec.Command("powershell.exe", "-NoProfile", "-Command", script)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	return cmd.Run()
+}
+
+func escapeXMLForPowerShell(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	s = strings.ReplaceAll(s, "\"", "&quot;")
+	s = strings.ReplaceAll(s, "'", "&apos;")
+	return s
 }
 
 func (ti *TrayIcon) AddMenuItem(title, tooltip string) *MenuItem {

@@ -31,6 +31,9 @@ var assets embed.FS
 //go:embed build/appicon.png
 var iconData []byte
 
+//go:embed build/keyicon.png
+var keyIconData []byte
+
 func checkAlreadyRunning() {
 	b, err := pageant.AlreadyRunning()
 	if err != nil {
