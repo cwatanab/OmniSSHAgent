@@ -19,6 +19,7 @@
     "name": "YAMASAKI Masahide",
     "email": "masahide.y@gmail.com"
   },
+  "preBuildHooks": {},
   "debounceMS": 100,
   "devserverurl": "http://localhost:34115",
   "appargs": ""

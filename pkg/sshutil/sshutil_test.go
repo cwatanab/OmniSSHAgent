@@ -7,6 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/masahide/OmniSSHAgent/pkg/sshkey"
 	"github.com/masahide/OmniSSHAgent/pkg/store"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 func TestCheckKeyType(t *testing.T) {
@@ -236,3 +238,116 @@ func TestMergeKeyList(t *testing.T) {
 		})
 	}
 }
+
+type mockStore struct {
+	data map[string]string
+}
+
+func (m *mockStore) Get(key string) (string, error) {
+	return m.data[key], nil
+}
+func (m *mockStore) Set(key, value string) error {
+	if m.data == nil {
+		m.data = make(map[string]string)
+	}
+	m.data[key] = value
+	return nil
+}
+func (m *mockStore) Remove(key string) error {
+	delete(m.data, key)
+	return nil
+}
+
+func TestKeyRing_DisableAndList(t *testing.T) {
+	t.Setenv("AppData", t.TempDir())
+
+	mStore := &mockStore{data: make(map[string]string)}
+	settings := store.NewSettings("OmniSSHAgentTest", mStore)
+
+	privKey, err := generatePrivateKey(2048)
+	if err != nil {
+		t.Fatalf("failed to generate private key: %v", err)
+	}
+	signer, err := ssh.NewSignerFromKey(privKey)
+	if err != nil {
+		t.Fatalf("failed to create signer: %v", err)
+	}
+	pubKey := signer.PublicKey()
+	sha256 := ssh.FingerprintSHA256(pubKey)
+
+	key1 := sshkey.PrivateKeyFile{
+		ID: "key-1",
+		PublicKey: sshkey.PublicKey{
+			SHA256: sha256,
+		},
+		Disabled: false,
+	}
+	settings.Keys = []sshkey.PrivateKeyFile{key1}
+	if err := settings.Save(); err != nil {
+		t.Fatalf("failed to save settings: %v", err)
+	}
+
+	kr := NewKeyRing(settings)
+
+	err = kr.keyring.Add(agent.AddedKey{
+		PrivateKey: privKey,
+		Comment:    "test-key",
+	})
+	if err != nil {
+		t.Fatalf("failed to add key: %v", err)
+	}
+
+	list, err := kr.List()
+	if err != nil {
+		t.Fatalf("failed to list keys: %v", err)
+	}
+	if len(list) != 1 {
+		t.Errorf("expected 1 key, got %d", len(list))
+	}
+
+	err = kr.ToggleKey(sha256)
+	if err != nil {
+		t.Fatalf("failed to toggle key: %v", err)
+	}
+
+	if !kr.disabledKeys[sha256] {
+		t.Error("expected key to be disabled in memory")
+	}
+
+	if !settings.Keys[0].Disabled {
+		t.Error("expected key to be disabled in settings")
+	}
+
+	list, err = kr.List()
+	if err != nil {
+		t.Fatalf("failed to list keys: %v", err)
+	}
+	if len(list) != 0 {
+		t.Errorf("expected 0 keys (filtered), got %d", len(list))
+	}
+
+	keyList, err := kr.KeyList()
+	if err != nil {
+		t.Fatalf("failed to get KeyList: %v", err)
+	}
+	if len(keyList) != 1 {
+		t.Errorf("expected 1 key in KeyList for UI, got %d", len(keyList))
+	}
+	if !keyList[0].Disabled {
+		t.Error("expected key in KeyList to be marked as Disabled")
+	}
+
+	newSettings := store.NewSettings("OmniSSHAgentTest", mStore)
+	if err := newSettings.Load(); err != nil {
+		t.Fatalf("failed to load settings: %v", err)
+	}
+	if !newSettings.Keys[0].Disabled {
+		t.Error("expected loaded settings to have key disabled")
+	}
+
+	kr2 := NewKeyRing(newSettings)
+	if !kr2.disabledKeys[sha256] {
+		t.Error("expected new KeyRing to have key disabled in memory after load")
+	}
+}
+

@@ -552,7 +552,7 @@
                 if (!settingsData.ProxyModeOfNamedPipe) toggleKey(key);
               }}
             >
-              <span slot="icon" class="material-icons key-icon">key</span>
+              <img slot="icon" class="key-icon" src="assets/images/keyicon.png" alt="key" />
               <span class="key-info">
                 <span class="key-name">{key.name || t[lang].unnamedKey}</span>
                 <span class="key-type"
