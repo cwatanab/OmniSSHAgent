@@ -221,6 +221,11 @@ func CheckKeyType(filePath string, passPhrase string) (*sshkey.PrivateKeyFile, e
 // NewKeyRing an Agent that holds keys in memory.
 func NewKeyRing(s *store.Settings) *KeyRing {
 	k := &KeyRing{settings: s, disabledKeys: make(map[string]bool)}
+	for _, key := range s.Keys {
+		if key.Disabled && key.PublicKey.SHA256 != "" {
+			k.disabledKeys[key.PublicKey.SHA256] = true
+		}
+	}
 	if s.ProxyModeOfNamedPipe {
 		k.keyring = &namedpipe.NamedPipeClient{}
 		return k
@@ -258,7 +263,7 @@ func fpSHA256(blob []byte) string {
 }
 
 func (k *KeyRing) listPublickeys() ([]sshkey.PublicKey, error) {
-	list, err := k.List()
+	list, err := k.keyring.List()
 	if err != nil {
 		return nil, err
 	}
@@ -292,16 +297,25 @@ func (k *KeyRing) RemoveKey(sha256 string) error {
 }
 
 func (k *KeyRing) ToggleKey(sha256 string) error {
+	disabled := false
 	if k.disabledKeys[sha256] {
 		delete(k.disabledKeys, sha256)
 		k.notice("Add", sha256)
 		k.notice("Added", sha256)
-		return nil
+	} else {
+		k.disabledKeys[sha256] = true
+		disabled = true
+		k.notice("Remove", sha256)
+		k.notice("Removed", sha256)
 	}
-	k.disabledKeys[sha256] = true
-	k.notice("Remove", sha256)
-	k.notice("Removed", sha256)
-	return nil
+
+	for i := range k.settings.Keys {
+		if k.settings.Keys[i].PublicKey.SHA256 == sha256 {
+			k.settings.Keys[i].Disabled = disabled
+			break
+		}
+	}
+	return k.settings.Save()
 }
 
 // KeyList wails function to display the key list with
@@ -396,7 +410,18 @@ func (k *KeyRing) notice(action string, data interface{}) {
 func (k *KeyRing) List() ([]*agent.Key, error) {
 	k.notice("List", nil)
 	defer k.notice("Listed", nil)
-	return k.keyring.List()
+	list, err := k.keyring.List()
+	if err != nil {
+		return nil, err
+	}
+	var filtered []*agent.Key
+	for _, key := range list {
+		sha256 := ssh.FingerprintSHA256(key)
+		if !k.disabledKeys[sha256] {
+			filtered = append(filtered, key)
+		}
+	}
+	return filtered, nil
 }
 func (k *KeyRing) Sign(key ssh.PublicKey, data []byte) (*ssh.Signature, error) {
 	if k.disabledKeys[ssh.FingerprintSHA256(key)] {
