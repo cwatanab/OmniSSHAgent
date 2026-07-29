@@ -554,12 +554,9 @@
               <img slot="icon" class="key-icon" class:key-icon-disabled={key.disabled} src="assets/images/keyicon.png" alt="key" />
               <span class="key-info">
                 <span class="key-name">{key.name || t[lang].unnamedKey}</span>
-                <span class="key-type">
-                  {key.publickey.type || t[lang].unknownType}
-                  {#if key.disabled}
-                    <span class="disabled-badge">({t[lang].disableKey})</span>
-                  {/if}
-                </span>
+                <span class="key-type"
+                  >{key.publickey.type || t[lang].unknownType}</span
+                >
               </span>
             </ListItem>
           {/each}
