@@ -259,8 +259,23 @@ body {
   border-radius: 3px !important;
 }
 
-.key-list-item.disabled {
-  pointer-events: auto !important;
+.key-list-item.is-disabled {
+  opacity: 0.65;
+}
+
+.key-list-item.is-disabled:hover {
+  opacity: 0.85;
+}
+
+.key-icon-disabled {
+  filter: grayscale(100%);
+  opacity: 0.7;
+}
+
+.disabled-badge {
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.8;
 }
 
 .key-list-item .key-icon {

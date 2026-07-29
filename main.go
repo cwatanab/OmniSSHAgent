@@ -22,7 +22,7 @@ import (
 
 const (
 	AppName    = "OmniSSHAgent"
-	AppVersion = "0.7.5"
+	AppVersion = "0.7.7"
 )
 
 //go:embed all:frontend/dist
