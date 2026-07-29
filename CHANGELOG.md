@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.7] - 2026-07-29
+
+### Fixed
+- サイドバーの鍵一覧において、無効化した鍵がコンポーネントレベルの非活性化設定により操作不可能・非表示状態になる不具合を修正。
+- 無効化された鍵にはグレーアウトアイコンと視覚的な状態表示を追加し、一覧上で選択・有効化の再切り替えができるように改善。
+
 ## [0.7.6] - 2026-07-21
 
 ### Added
@@ -22,4 +28,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VSCode 関連の不要な開発設定ファイル（`.vscode/` 配下の `launch.json`, `settings.json`, `tasks.json`）の削除。
 - 不要な Windows マニフェストファイルやビルド一時ファイルの整理。
 
+[0.7.7]: https://github.com/cwatanab/OmniSSHAgent/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/cwatanab/OmniSSHAgent/compare/v0.7.5...v0.7.6

@@ -544,20 +544,22 @@
         <ul class="keys-list">
           {#each keys as key}
             <ListItem
-              class="key-list-item"
+              class="key-list-item {key.disabled ? 'is-disabled' : ''}"
               selected={selectedKey && selectedKey.publickey.sha256 === key.publickey.sha256}
-              disabled={key.disabled}
               on:click={() => selectKey(key)}
               on:dblclick={() => {
                 if (!settingsData.ProxyModeOfNamedPipe) toggleKey(key);
               }}
             >
-              <img slot="icon" class="key-icon" src="assets/images/keyicon.png" alt="key" />
+              <img slot="icon" class="key-icon" class:key-icon-disabled={key.disabled} src="assets/images/keyicon.png" alt="key" />
               <span class="key-info">
                 <span class="key-name">{key.name || t[lang].unnamedKey}</span>
-                <span class="key-type"
-                  >{key.publickey.type || t[lang].unknownType}</span
-                >
+                <span class="key-type">
+                  {key.publickey.type || t[lang].unknownType}
+                  {#if key.disabled}
+                    <span class="disabled-badge">({t[lang].disableKey})</span>
+                  {/if}
+                </span>
               </span>
             </ListItem>
           {/each}
