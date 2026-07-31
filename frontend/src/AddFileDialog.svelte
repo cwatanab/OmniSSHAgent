@@ -185,6 +185,7 @@
           readonly
           value={keytype}
           placeholder="private key type"
+          style="width: 100%;"
         />
       </div>
 
@@ -216,6 +217,7 @@
             bind:value={pkFile.passphrase}
             type="password"
             placeholder="passphrase of private key"
+            style="width: 100%;"
           />
         </div>
       {/if}

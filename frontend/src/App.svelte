@@ -629,7 +629,7 @@
           {/if}
         </div>
 
-        <div class="detail-fields" style="max-width: 800px; display: flex; flex-direction: column; gap: 16px;">
+        <div class="detail-fields" style="display: flex; flex-direction: column; gap: 16px;">
           <!-- Basic Info Card -->
           <div class="detail-card">
             <!-- File Path Row -->

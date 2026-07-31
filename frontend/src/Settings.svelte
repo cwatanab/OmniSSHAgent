@@ -638,6 +638,9 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
+    min-width: 170px;
+    max-width: 320px;
   }
   .accent-color-picker {
     width: 30px;
@@ -661,7 +664,10 @@
   /* Select wrapper for theme-aware caret */
   .select-wrapper {
     position: relative;
-    display: inline-block;
+    display: flex;
+    flex: 1;
+    min-width: 170px;
+    max-width: 320px;
   }
   .select-wrapper::after {
     content: "";
@@ -679,7 +685,7 @@
 
   /* Standard Select styling */
   .settings-select {
-    width: 170px;
+    width: 100%;
     padding: 6px 32px 6px 12px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
