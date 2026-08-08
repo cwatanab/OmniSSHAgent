@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.9] - 2026-08-08
+
+### Changed
+- Go 依存ライブラリを最新バージョンへ更新（Wails v2.13.0, `golang.org/x/crypto`, `golang.org/x/sys`, `golang.org/x/net`, `golang.org/x/text`, `go-keyring`, `wincred` 等）。
+- フロントエンドの依存パッケージ更新および CSS 最小化用の `cssnano` を追加。
+- アプリケーションバージョンを v0.7.9 へ更新。
+
 ## [0.7.8] - 2026-07-31
 
 ### Fixed
@@ -36,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VSCode 関連の不要な開発設定ファイル（`.vscode/` 配下の `launch.json`, `settings.json`, `tasks.json`）の削除。
 - 不要な Windows マニフェストファイルやビルド一時ファイルの整理。
 
+[0.7.9]: https://github.com/cwatanab/OmniSSHAgent/compare/v0.7.8...v0.7.9
 [0.7.8]: https://github.com/cwatanab/OmniSSHAgent/compare/v0.7.7...v0.7.8
 [0.7.7]: https://github.com/cwatanab/OmniSSHAgent/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/cwatanab/OmniSSHAgent/compare/v0.7.5...v0.7.6
